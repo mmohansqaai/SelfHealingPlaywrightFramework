@@ -1,5 +1,7 @@
 # Self-Healing Playwright Framework (Nova Retail)
 
+[![Playwright Tests](https://github.com/mmohan-bayone/SelfHealingPlaywrightFramework/actions/workflows/playwright.yml/badge.svg)](https://github.com/mmohan-bayone/SelfHealingPlaywrightFramework/actions/workflows/playwright.yml)
+
 Self-healing Playwright tests for the Nova Retail login page: `https://retail-website-two.vercel.app/login`.
 
 ## Purpose
