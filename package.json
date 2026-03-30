@@ -1,0 +1,18 @@
+{
+  "name": "self-healing-playwright-framework",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Playwright tests with multi-strategy self-healing locators",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "report": "playwright show-report",
+    "install:browsers": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.51.0",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}
