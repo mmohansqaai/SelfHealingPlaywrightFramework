@@ -32,7 +32,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run Playwright tests
-        run: npx playwright test
+        run: npx playwright test --reporter=html,json
 
       - name: Upload HTML report
         if: always()
@@ -49,3 +49,13 @@ jobs:
           name: test-results
           path: test-results/
           retention-days: 7
+
+      - name: Publish results to dashboard
+        if: always()
+        env:
+          DASHBOARD_URL: https://realtime-testing-dashboard-api.onrender.com
+          DASHBOARD_INGEST_TOKEN: ${{ secrets.DASHBOARD_INGEST_TOKEN }}
+          SUITE_NAME: SelfHealing Playwright
+          ENVIRONMENT: CI
+          BUILD_VERSION: ${{ github.sha }}
+        run: node scripts/playwright-report-to-dashboard.mjs playwright-report/results.json
