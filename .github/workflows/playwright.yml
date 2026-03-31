@@ -57,7 +57,8 @@ jobs:
 
       # Best-effort: do not fail the workflow if the dashboard API is down (e.g. Render cold start / network).
       - name: Publish results to dashboard
-        if: always() && secrets.DASHBOARD_INGEST_TOKEN != ''
+        # `secrets` is only valid inside ${{ }} expressions (bare `if:` cannot use secrets.*).
+        if: ${{ always() && secrets.DASHBOARD_INGEST_TOKEN != '' }}
         continue-on-error: true
         env:
           DASHBOARD_URL: https://realtime-testing-dashboard-api.onrender.com
