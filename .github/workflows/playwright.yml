@@ -57,12 +57,22 @@ jobs:
 
       # Best-effort: do not fail the workflow if the dashboard API is down (e.g. Render cold start / network).
       # Do not use `secrets.*` in `if:` — GitHub rejects it. The script exits 0 when the token is unset.
+      - name: Warm dashboard API (Render free tier cold start)
+        if: always()
+        continue-on-error: true
+        env:
+          DASHBOARD_URL: https://realtime-testing-dashboard-api.onrender.com
+        run: |
+          echo "GET $DASHBOARD_URL/ (wake sleeping instance; may take 1-3 min)"
+          curl -sS -o /dev/null -w "HTTP %{http_code}\n" --connect-timeout 10 --max-time 240 "$DASHBOARD_URL/" || true
+
       - name: Publish results to dashboard
         if: always()
         continue-on-error: true
         env:
           DASHBOARD_URL: https://realtime-testing-dashboard-api.onrender.com
-          DASHBOARD_FETCH_TIMEOUT_MS: '120000'
+          # Cold start + ingest can exceed 2 min; 5 min is safer on free Render.
+          DASHBOARD_FETCH_TIMEOUT_MS: '300000'
           DASHBOARD_INGEST_TOKEN: ${{ secrets.DASHBOARD_INGEST_TOKEN }}
           SUITE_NAME: SelfHealing Playwright
           ENVIRONMENT: CI
