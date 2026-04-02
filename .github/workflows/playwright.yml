@@ -1,3 +1,6 @@
+# Copy into SelfHealingPlaywrightFramework → .github/workflows/playwright.yml
+# Option B: always warm + publish after tests (no DASHBOARD_INGEST_IN_CI variable).
+
 name: Playwright Tests
 
 on:
@@ -55,25 +58,20 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
-      # Dashboard ingest is OFF by default so CI does not spend ~10 min on timeouts when the API is
-      # sleeping or unreachable (common on free Render). Enable with repo variable DASHBOARD_INGEST_IN_CI=true
-      # (Settings → Secrets and variables → Actions → Variables) once the API responds reliably.
-      # `vars` is allowed in `if:` (unlike `secrets`). Token still comes from secrets when this runs.
       - name: Warm dashboard API (Render cold start)
-        if: ${{ always() && vars.DASHBOARD_INGEST_IN_CI == 'true' }}
+        if: always()
         continue-on-error: true
         env:
           DASHBOARD_URL: https://realtime-testing-dashboard-api.onrender.com
         run: |
-          echo "GET $DASHBOARD_URL/ (wake sleeping instance)"
-          curl -sS -o /dev/null -w "HTTP %{http_code}\n" --connect-timeout 10 --max-time 120 "$DASHBOARD_URL/" || true
+          echo "GET $DASHBOARD_URL/api/health (wake sleeping instance)"
+          curl -sS -w "\nHTTP %{http_code}\n" --connect-timeout 10 --max-time 120 "$DASHBOARD_URL/api/health" || true
 
       - name: Publish results to dashboard
-        if: ${{ always() && vars.DASHBOARD_INGEST_IN_CI == 'true' }}
+        if: always()
         continue-on-error: true
         env:
           DASHBOARD_URL: https://realtime-testing-dashboard-api.onrender.com
-          # Cold start + ingest can exceed 2 min; 5 min is safer on free Render.
           DASHBOARD_FETCH_TIMEOUT_MS: '300000'
           DASHBOARD_INGEST_TOKEN: ${{ secrets.DASHBOARD_INGEST_TOKEN }}
           SUITE_NAME: SelfHealing Playwright
