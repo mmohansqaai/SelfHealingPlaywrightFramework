@@ -8,7 +8,8 @@
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
     "report": "playwright show-report",
-    "install:browsers": "playwright install chromium"
+    "install:browsers": "playwright install chromium",
+    "test:traceability": "playwright test tests/traceability"
   },
   "devDependencies": {
     "@playwright/test": "^1.51.0",
