@@ -9,7 +9,7 @@
     "test:ui": "playwright test --ui",
     "report": "playwright show-report",
     "install:browsers": "playwright install chromium",
-    "test:traceability": "playwright test tests/traceability",
+    "test:traceability": "RUN_TRACEABILITY=1 playwright test tests/traceability",
     "deck:board": "node scripts/generate-board-deck.mjs",
     "deck:beginner": "node scripts/generate-beginner-technical-deck.mjs"
   },

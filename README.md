@@ -37,7 +37,7 @@ Healing implementation lives in `core/self-healing.ts` and is used by page objec
   - `login.spec.ts`: page-load + demo customer login
   - `checkout-flow.spec.ts`: end-to-end customer login through **complete checkout** (120s timeout)
   - `admin-restock.spec.ts`: **admin** login (`admin@demo.com` / `admin123`), seed product if DB empty, **+50 stock** per catalog row with healing
-  - **`tests/traceability/`**: **Nova Retail–focused** subset of the original TC matrix (IDs still in test titles where applicable). Uses **`core/self-healing`** (`healingClick` / `healingFill` / `healingExpectVisible`), shared **`strategies.ts`** fallback chains, and **`LoginPage`**-based login with **`attachHealingSummary`** in the HTML report. Cases that never applied to this SPA (marketing-only flows, unsupported checkout fields, etc.) were **removed** rather than skipped.
+  - **`tests/traceability/`**: **Nova Retail–focused** TC matrix specs — **excluded from default runs** via `testIgnore` in `playwright.config.ts`. Run them with **`npm run test:traceability`** (sets `RUN_TRACEABILITY=1`) or `RUN_TRACEABILITY=1 npx playwright test`. Uses **`core/self-healing`**, **`strategies.ts`**, **`LoginPage`**, **`attachHealingSummary`**.
 - **`.github/workflows/`**
   - `playwright.yml`: free GitHub Actions CI for running tests in headless Chromium
 
@@ -94,9 +94,13 @@ npx playwright test -g "customer demo login"
 
 ### Run traceability suite (Nova Retail)
 
+Not included in `npm test` by default. Use:
+
 ```bash
 npm run test:traceability
 ```
+
+(`RUN_TRACEABILITY=1` enables those specs.)
 
 ## Reports and artifacts
 

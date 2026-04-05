@@ -4,6 +4,10 @@ const baseURL = process.env.BASE_URL ?? 'https://retail-website-two.vercel.app';
 
 export default defineConfig({
   testDir: './tests',
+  // Skip tests/traceability/ unless RUN_TRACEABILITY=1 (e.g. npm run test:traceability).
+  ...(process.env.RUN_TRACEABILITY === '1'
+    ? {}
+    : { testIgnore: ['**/traceability/**'] }),
   // Created when traces/screenshots/videos are written (e.g. failures); may be absent on all-green runs.
   outputDir: 'test-results',
   fullyParallel: true,
