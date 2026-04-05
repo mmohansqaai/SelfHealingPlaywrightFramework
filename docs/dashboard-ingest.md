@@ -103,7 +103,20 @@ So: **making ingest “work” is mostly making the API process reachable and re
 2. **Variables → Actions:** `DASHBOARD_INGEST_IN_CI` = `true` (enables warm + publish steps in `.github/workflows/playwright.yml`).
 3. Confirm **`DASHBOARD_URL`** in the workflow matches your deployed API base URL (no trailing slash required; the script strips it).
 
-## 5. Local smoke test (before relying on CI)
+## 5. What to check in the Playwright repo (CI “Publish results” log)
+
+After a run, open the **Publish results to dashboard** step and confirm:
+
+| Check | What you should see |
+|--------|---------------------|
+| **URL** | A line with the full URL ending in **`/api/ingest/github-actions/run-with-report`** (not only `/run`). |
+| **Multipart** | Log lines mention form fields **`payload`** + **`report_zip`** and a **curl** example with **`-F "report_zip=@...`** (field name **`report_zip`** exactly). |
+| **Response body** | JSON that includes **`"has_html_report_zip": true`** after a successful zip upload (script prints a ✓ or ⚠ line). |
+| **Optional header** | **`X-Ingest-Report-Zip-Bytes`** &gt; 0 when the API stores the zip (script logs the header value if present). |
+
+If you only see **`/api/ingest/github-actions/run`** and “JSON-only”, the HTML zip path did not run (missing `playwright-report/index.html`, or `DASHBOARD_JSON_ONLY=1`).
+
+## 6. Local smoke test (before relying on CI)
 
 ```bash
 export DASHBOARD_URL=https://realtime-testing-dashboard-api.onrender.com
@@ -114,7 +127,7 @@ node scripts/playwright-report-to-dashboard.mjs playwright-report/results.json
 
 If this fails locally, fix the API first; CI will not behave better.
 
-## 6. Dashboard product checklist
+## 7. Dashboard product checklist
 
 - [ ] `POST /api/ingest/github-actions/run-with-report` accepts **multipart** (`payload` JSON + `report_zip` file), stores the zip, and exposes `has_html_report_zip` (or equivalent) in **`GET /api/summary`** / `latest_runs`.
 - [ ] `POST /api/ingest/github-actions/run` (JSON-only) implemented for fallback and returns 2xx on success.

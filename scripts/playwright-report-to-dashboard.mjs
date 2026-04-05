@@ -99,8 +99,11 @@ async function postIngestJson(url, body) {
   return text
 }
 
+const PATH_RUN_WITH_REPORT = '/api/ingest/github-actions/run-with-report'
+const PATH_RUN_JSON = '/api/ingest/github-actions/run'
+
 /**
- * Multipart: fields `payload` (JSON) and `report_zip` (file).
+ * Multipart: fields `payload` (JSON) and `report_zip` (file) — names must match API.
  * Do not set Content-Type — fetch sets multipart boundary.
  */
 async function postIngestMultipart(url, body, zipPath) {
@@ -122,18 +125,97 @@ async function postIngestMultipart(url, body, zipPath) {
     signal,
   })
   const text = await res.text()
+  const zipBytesHeader =
+    res.headers.get('x-ingest-report-zip-bytes') ||
+    res.headers.get('X-Ingest-Report-Zip-Bytes') ||
+    ''
   if (!res.ok) {
     const err = new Error(`HTTP ${res.status}: ${text}`)
     err.status = res.status
     throw err
   }
-  return text
+  return { text, status: res.status, zipBytesHeader }
 }
 
-async function postWithRetriesJson(url, body) {
+function assertUrlEndsWith(url, suffix, label) {
+  const ok = url.endsWith(suffix)
+  if (!ok) {
+    console.warn(`[dashboard] WARNING: ${label} URL should end with ${suffix}, got: ${url}`)
+  }
+  return ok
+}
+
+/**
+ * CI log: what to verify in "Publish results" (multipart / run-with-report).
+ */
+function logMultipartPreflight(url, zipPath, testCaseCount) {
+  const zipSize = statSync(zipPath).size
+  assertUrlEndsWith(url, PATH_RUN_WITH_REPORT, 'run-with-report')
+  console.log('')
+  console.log('[dashboard] ========== Publish results (multipart) — check this log ==========')
+  console.log(`[dashboard] Node: POST (fetch) multipart`)
+  console.log(`[dashboard] URL (must end with ${PATH_RUN_WITH_REPORT}):`)
+  console.log(`[dashboard]   ${url}`)
+  console.log(`[dashboard] Form fields (exact names): "payload" (JSON) + "report_zip" (file)`)
+  console.log(
+    `[dashboard] curl equivalent (token redacted): curl -sS -X POST "${url}" -H "X-Ingest-Token: ***" -F "payload=@payload.json;type=application/json" -F "report_zip=@${zipPath}"`,
+  )
+  console.log(`[dashboard]   (equivalent: -F "report_zip=@.../playwright-report.zip" — field name must be report_zip)`)
+  console.log(`[dashboard] Zip path: ${zipPath} (${zipSize} bytes), test cases in payload: ${testCaseCount}`)
+  console.log('[dashboard] ================================================================')
+  console.log('')
+}
+
+function logIngestResponseSuccess(text, zipBytesHeader, mode) {
+  console.log(`[dashboard] HTTP response body (${mode}):`)
+  console.log(text)
+  if (zipBytesHeader !== undefined) {
+    if (zipBytesHeader === null || zipBytesHeader === '') {
+      console.log('[dashboard] Response header X-Ingest-Report-Zip-Bytes: (not sent by server)')
+    } else {
+      const n = Number(zipBytesHeader)
+      console.log(
+        `[dashboard] Response header X-Ingest-Report-Zip-Bytes: ${zipBytesHeader}` +
+          (Number.isFinite(n) && n > 0 ? ' (OK: > 0 when zip stored)' : ' (optional; expect > 0 if API sets it)'),
+      )
+    }
+  } else {
+    console.log('[dashboard] X-Ingest-Report-Zip-Bytes: N/A (JSON-only /run — no multipart)')
+  }
+  try {
+    const j = JSON.parse(text)
+    if (Object.prototype.hasOwnProperty.call(j, 'has_html_report_zip')) {
+      if (j.has_html_report_zip === true) {
+        console.log('[dashboard] ✓ Response JSON includes "has_html_report_zip": true (zip upload recognized)')
+      } else {
+        console.warn(
+          `[dashboard] ⚠ Response JSON has "has_html_report_zip": ${JSON.stringify(j.has_html_report_zip)} — expected true after successful zip ingest`,
+        )
+      }
+    } else {
+      console.log(
+        '[dashboard] Note: response JSON has no "has_html_report_zip" key — API may still be OK; confirm GET /api/summary on dashboard',
+      )
+    }
+  } catch {
+    console.log('[dashboard] Response was not JSON; skip has_html_report_zip check')
+  }
+}
+
+async function postWithRetriesJson(url, body, opts = {}) {
+  const { label = 'JSON-only /run' } = opts
   let lastErr
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
+      if (attempt === 1) {
+        assertUrlEndsWith(url, PATH_RUN_JSON, 'run')
+        console.log('')
+        console.log(`[dashboard] ========== ${label} ==========`)
+        console.log(`[dashboard] URL (must end with ${PATH_RUN_JSON}): ${url}`)
+        console.log('[dashboard] No multipart — metrics only; HTML zip requires run-with-report')
+        console.log('[dashboard] =========================================')
+        console.log('')
+      }
       return await postIngestJson(url, body)
     } catch (e) {
       lastErr = e
@@ -163,6 +245,9 @@ async function postWithRetriesMultipart(url, body, zipPath) {
   let lastErr
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
+      if (attempt === 1) {
+        logMultipartPreflight(url, zipPath, body.test_cases?.length ?? 0)
+      }
       return await postIngestMultipart(url, body, zipPath)
     } catch (e) {
       lastErr = e
@@ -248,18 +333,15 @@ async function main() {
     statSync(reportDirAbs).isDirectory() &&
     existsSync(htmlIndex)
 
-  const urlWithReport = `${dashboardUrl}/api/ingest/github-actions/run-with-report`
-  const urlJsonOnly = `${dashboardUrl}/api/ingest/github-actions/run`
+  const urlWithReport = `${dashboardUrl}${PATH_RUN_WITH_REPORT}`
+  const urlJsonOnly = `${dashboardUrl}${PATH_RUN_JSON}`
 
   if (canZip) {
     const zipPath = join(tmpdir(), `playwright-report-${process.pid}.zip`)
     try {
       zipReportDirectory(reportDirAbs, zipPath)
-      console.log(
-        `[dashboard] POST ${urlWithReport} (multipart: payload + report_zip, ${testCases.length} test case(s))`,
-      )
-      const out = await postWithRetriesMultipart(urlWithReport, body, zipPath)
-      console.log(out)
+      const result = await postWithRetriesMultipart(urlWithReport, body, zipPath)
+      logIngestResponseSuccess(result.text, result.zipBytesHeader, 'run-with-report')
       return
     } catch (e) {
       console.warn(
@@ -278,9 +360,10 @@ async function main() {
     )
   }
 
-  console.log(`[dashboard] POST ${urlJsonOnly} (${testCases.length} test case(s))`)
-  const out = await postWithRetriesJson(urlJsonOnly, body)
-  console.log(out)
+  const out = await postWithRetriesJson(urlJsonOnly, body, {
+    label: 'Fallback: JSON-only ingest (no HTML zip)',
+  })
+  logIngestResponseSuccess(out, undefined, 'run')
 }
 
 main().catch((e) => {
