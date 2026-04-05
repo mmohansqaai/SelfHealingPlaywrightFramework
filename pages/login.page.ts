@@ -101,4 +101,16 @@ export class LoginPage {
     const submit = await this.submit();
     return { email, password, submit };
   }
+
+  /** Demo admin from the login page hint: admin@demo.com / admin123 */
+  async loginAsAdmin(): Promise<{
+    email: HealingResult<void>;
+    password: HealingResult<void>;
+    submit: HealingResult<void>;
+  }> {
+    const email = await this.fillEmail('admin@demo.com');
+    const password = await this.fillPassword('admin123');
+    const submit = await this.submit();
+    return { email, password, submit };
+  }
 }

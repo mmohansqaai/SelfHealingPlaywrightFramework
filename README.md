@@ -30,9 +30,13 @@ Healing implementation lives in `core/self-healing.ts` and is used by page objec
   - `healing-reporter.ts`: attaches healing details to the HTML report
 - **`pages/`**
   - `login.page.ts`: page object with locator strategy chains for the login page
+  - `retail-journey.page.ts`: self-healing flow for products → cart → checkout → order confirmation
+  - `admin-inventory.page.ts`: admin login destination `/app/admin`; per-row stock + Save; optional one-product seed if catalog is empty
 - **`tests/`**
-  - `fixtures.ts`: provides `loginPage` fixture
-  - `login.spec.ts`: example tests (page-load + demo customer login)
+  - `fixtures.ts`: provides `loginPage`, `retailJourney`, and `adminInventory` fixtures
+  - `login.spec.ts`: page-load + demo customer login
+  - `checkout-flow.spec.ts`: end-to-end customer login through **complete checkout** (120s timeout)
+  - `admin-restock.spec.ts`: **admin** login (`admin@demo.com` / `admin123`), seed product if DB empty, **+50 stock** per catalog row with healing
 - **`.github/workflows/`**
   - `playwright.yml`: free GitHub Actions CI for running tests in headless Chromium
 
