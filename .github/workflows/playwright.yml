@@ -67,7 +67,10 @@ jobs:
           echo "GET $DASHBOARD_URL/api/health (wake sleeping instance)"
           curl -sS -w "\nHTTP %{http_code}\n" --connect-timeout 10 --max-time 120 "$DASHBOARD_URL/api/health" || true
 
-      - name: Publish results to dashboard
+      # Zips playwright-report/ and POSTs multipart to .../run-with-report (payload + report_zip).
+      # Falls back to JSON-only .../run if zip or multipart fails. Updating the dashboard repo alone
+      # does not change this — ingest runs from this workflow + script.
+      - name: Publish results to dashboard (metrics + HTML zip)
         if: always()
         continue-on-error: true
         env:

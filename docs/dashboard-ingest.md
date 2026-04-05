@@ -4,7 +4,33 @@ This repo posts Playwright JSON results to your dashboard over HTTP. For that to
 
 ## 1. What the Playwright repo sends
 
-**Endpoint (must exist on your API):**
+### A) Preferred: HTML report + metrics (multipart)
+
+**Endpoint:**
+
+`POST {DASHBOARD_URL}/api/ingest/github-actions/run-with-report`
+
+**Headers:**
+
+| Header | Value |
+|--------|--------|
+| `X-Ingest-Token` | Same value as GitHub secret `DASHBOARD_INGEST_TOKEN` |
+| `Content-Type` | *(omit — client sends `multipart/form-data` with boundary)* |
+
+**Body:** `multipart/form-data` with two parts:
+
+| Part name | Type | Content |
+|-----------|------|---------|
+| `payload` | JSON (`application/json`) | Same object as in section B below (`suite_name`, `environment`, `build_version`, `test_cases`) |
+| `report_zip` | File | Zip of the **`playwright-report/`** folder (contains `index.html`, assets, etc.) |
+
+The script `scripts/playwright-report-to-dashboard.mjs` builds this zip (requires the `zip` CLI, available on `ubuntu-latest`) and posts it after each test run. If this endpoint errors (e.g. not deployed yet), the script **falls back** to JSON-only ingest (section B).
+
+**Dashboard verification:** `GET {DASHBOARD_URL}/api/summary` → `latest_runs` should show `has_html_report_zip: true` after a successful multipart ingest. If it is always `false`, CI is likely only hitting the JSON endpoint — confirm this repo’s workflow runs the script above and that `playwright-report/index.html` exists after tests.
+
+### B) Fallback: metrics only (JSON)
+
+**Endpoint:**
 
 `POST {DASHBOARD_URL}/api/ingest/github-actions/run`
 
@@ -39,9 +65,12 @@ This repo posts Playwright JSON results to your dashboard over HTTP. For that to
 
 1. Validate `X-Ingest-Token` against a server-side secret (do not accept requests without a valid token).
 2. Parse JSON, persist the run + `test_cases` (or push to your real-time layer).
-3. Respond with **`2xx` and a small body** as soon as persistence is done (aim for **&lt; 5–10 seconds** under normal load).
+3. For multipart ingest, also store/extract `report_zip` and set `has_html_report_zip` (or equivalent) for the UI.
+4. Respond with **`2xx` and a small body** as soon as persistence is done (aim for **&lt; 5–10 seconds** under normal load).
 
 If the handler is slow (heavy DB work on the request thread), GitHub Actions will hit the client timeout even though the server is “up.”
+
+**Local / debugging:** force JSON-only (no zip): `DASHBOARD_JSON_ONLY=1 node scripts/playwright-report-to-dashboard.mjs playwright-report/results.json`
 
 ## 2. Why CI saw timeouts and “0 bytes”
 
@@ -87,7 +116,8 @@ If this fails locally, fix the API first; CI will not behave better.
 
 ## 6. Dashboard product checklist
 
-- [ ] `POST /api/ingest/github-actions/run` implemented and returns 2xx on success.
+- [ ] `POST /api/ingest/github-actions/run-with-report` accepts **multipart** (`payload` JSON + `report_zip` file), stores the zip, and exposes `has_html_report_zip` (or equivalent) in **`GET /api/summary`** / `latest_runs`.
+- [ ] `POST /api/ingest/github-actions/run` (JSON-only) implemented for fallback and returns 2xx on success.
 - [ ] Token validated via `X-Ingest-Token`.
 - [ ] Handler finishes quickly; async work queued if needed.
 - [ ] `GET /health` (or `/`) returns 200 when the process is ready.
