@@ -6,3 +6,6 @@ blob-report/
 playwright/.cache/
 .env
 *.log
+# Dashboard ingest (CI / local curl)
+payload.json
+report.zip

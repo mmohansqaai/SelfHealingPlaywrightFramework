@@ -4,7 +4,7 @@ This repo posts Playwright JSON results to your dashboard over HTTP. For that to
 
 ## 1. What the Playwright repo sends
 
-### A) Preferred: HTML report + metrics (multipart)
+### A) HTML report + metrics (multipart) — **what CI uses**
 
 **Endpoint:**
 
@@ -15,20 +15,33 @@ This repo posts Playwright JSON results to your dashboard over HTTP. For that to
 | Header | Value |
 |--------|--------|
 | `X-Ingest-Token` | Same value as GitHub secret `DASHBOARD_INGEST_TOKEN` |
-| `Content-Type` | *(omit — client sends `multipart/form-data` with boundary)* |
+| `Content-Type` | *(omit — `multipart/form-data` with boundary)* |
 
-**Body:** `multipart/form-data` with two parts:
+**Body:** `multipart/form-data` with exactly two parts:
 
-| Part name | Type | Content |
-|-----------|------|---------|
-| `payload` | JSON (`application/json`) | Same object as in section B below (`suite_name`, `environment`, `build_version`, `test_cases`) |
-| `report_zip` | File | Zip of the **`playwright-report/`** folder (contains `index.html`, assets, etc.) |
+| Part name | Content |
+|-----------|--------|
+| `payload` | Same JSON as before (written to **`payload.json`** in CI via `node scripts/build-dashboard-payload.mjs`). Use **`-F "payload=@payload.json;type=application/json"`** in curl. |
+| `report_zip` | Zip of the **`playwright-report/`** directory (not the JSON file). CI runs `( cd playwright-report && zip -qr ../report.zip . )` then **`-F "report_zip=@report.zip;type=application/zip"`**. |
 
-The script `scripts/playwright-report-to-dashboard.mjs` builds this zip (requires the `zip` CLI, available on `ubuntu-latest`) and posts it after each test run. If this endpoint errors (e.g. not deployed yet), the script **falls back** to JSON-only ingest (section B).
+**GitHub Actions** uses **plain curl** (no Node fetch, **no fallback** to JSON-only `/run`):
 
-**Dashboard verification:** `GET {DASHBOARD_URL}/api/summary` → `latest_runs` should show `has_html_report_zip: true` after a successful multipart ingest. If it is always `false`, CI is likely only hitting the JSON endpoint — confirm this repo’s workflow runs the script above and that `playwright-report/index.html` exists after tests.
+```bash
+node scripts/build-dashboard-payload.mjs playwright-report/results.json payload.json
+( cd playwright-report && zip -qr ../report.zip . )
+curl -f -sS -X POST "${DASHBOARD_URL}/api/ingest/github-actions/run-with-report" \
+  -H "X-Ingest-Token: ${DASHBOARD_INGEST_TOKEN}" \
+  -F "payload=@payload.json;type=application/json" \
+  -F "report_zip=@report.zip;type=application/zip"
+```
 
-### B) Fallback: metrics only (JSON)
+After a successful upload, the response body should include **`"has_html_report_zip": true`**, and response headers may include **`X-Ingest-Report-Zip-Bytes`** with a positive value.
+
+**Local:** you can run the same commands, or **`node scripts/playwright-report-to-dashboard.mjs playwright-report/results.json`** (fetch multipart, same fields).
+
+**Dashboard verification:** `GET {DASHBOARD_URL}/api/summary` → `latest_runs` should show `has_html_report_zip: true` when ingest succeeded. If it stays `false`, confirm the workflow log shows the **`run-with-report`** URL and multipart **curl**, not only `/run`.
+
+### B) Optional: metrics only (JSON) — legacy / other clients
 
 **Endpoint:**
 
@@ -69,8 +82,6 @@ The script `scripts/playwright-report-to-dashboard.mjs` builds this zip (require
 4. Respond with **`2xx` and a small body** as soon as persistence is done (aim for **&lt; 5–10 seconds** under normal load).
 
 If the handler is slow (heavy DB work on the request thread), GitHub Actions will hit the client timeout even though the server is “up.”
-
-**Local / debugging:** force JSON-only (no zip): `DASHBOARD_JSON_ONLY=1 node scripts/playwright-report-to-dashboard.mjs playwright-report/results.json`
 
 ## 2. Why CI saw timeouts and “0 bytes”
 
@@ -114,15 +125,25 @@ After a run, open the **Publish results to dashboard** step and confirm:
 | **Response body** | JSON that includes **`"has_html_report_zip": true`** after a successful zip upload (script prints a ✓ or ⚠ line). |
 | **Optional header** | **`X-Ingest-Report-Zip-Bytes`** &gt; 0 when the API stores the zip (script logs the header value if present). |
 
-If you only see **`/api/ingest/github-actions/run`** and “JSON-only”, the HTML zip path did not run (missing `playwright-report/index.html`, or `DASHBOARD_JSON_ONLY=1`).
+If you only see **metrics** and no zip in the dashboard, confirm the log shows **`run-with-report`** and **`report_zip=@report.zip`** (not a JSON-only path).
 
 ## 6. Local smoke test (before relying on CI)
 
 ```bash
 export DASHBOARD_URL=https://realtime-testing-dashboard-api.onrender.com
 export DASHBOARD_INGEST_TOKEN=your-token
-npm test   # produces playwright-report/results.json
-node scripts/playwright-report-to-dashboard.mjs playwright-report/results.json
+npm test   # playwright-report/results.json + HTML report
+
+# Same as CI: payload file + zip + curl
+node scripts/build-dashboard-payload.mjs playwright-report/results.json payload.json
+( cd playwright-report && zip -qr ../report.zip . )
+curl -f -sS -X POST "${DASHBOARD_URL}/api/ingest/github-actions/run-with-report" \
+  -H "X-Ingest-Token: ${DASHBOARD_INGEST_TOKEN}" \
+  -F "payload=@payload.json;type=application/json" \
+  -F "report_zip=@report.zip;type=application/zip"
+
+# Or: Node helper (multipart fetch, same contract)
+# node scripts/playwright-report-to-dashboard.mjs playwright-report/results.json
 ```
 
 If this fails locally, fix the API first; CI will not behave better.
