@@ -17,7 +17,7 @@ jobs:
 
     env:
       CI: "true"
-      BASE_URL: "https://retail-website-two.vercel.app"
+      BASE_URL: "https://retail-website-fawn.vercel.app"
 
     steps:
       - name: Checkout
@@ -62,7 +62,7 @@ jobs:
         if: always()
         continue-on-error: true
         env:
-          DASHBOARD_URL: https://realtime-testing-dashboard-api.onrender.com
+          DASHBOARD_URL: https://realtime-testing-dashboard-api-ld7t.onrender.com
         run: |
           echo "GET $DASHBOARD_URL/api/health (wake sleeping instance)"
           curl -sS -w "\nHTTP %{http_code}\n" --connect-timeout 10 --max-time 120 "$DASHBOARD_URL/api/health" || true
@@ -72,7 +72,7 @@ jobs:
         if: always()
         continue-on-error: true
         env:
-          DASHBOARD_URL: https://realtime-testing-dashboard-api.onrender.com
+          DASHBOARD_URL: https://realtime-testing-dashboard-api-ld7t.onrender.com
           DASHBOARD_INGEST_TOKEN: ${{ secrets.DASHBOARD_INGEST_TOKEN }}
           SUITE_NAME: SelfHealing Playwright
           ENVIRONMENT: CI

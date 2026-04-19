@@ -10,8 +10,13 @@
     "report": "playwright show-report",
     "install:browsers": "playwright install chromium",
     "test:traceability": "RUN_TRACEABILITY=1 playwright test tests/traceability",
+    "test:auto-heal-live-demo": "playwright test tests/auto-heal-live-demo.spec.ts",
+    "test:auto-heal-late-flow-demo": "playwright test tests/auto-heal-late-flow-demo.spec.ts",
     "deck:board": "node scripts/generate-board-deck.mjs",
-    "deck:beginner": "node scripts/generate-beginner-technical-deck.mjs"
+    "deck:beginner": "node scripts/generate-beginner-technical-deck.mjs",
+    "deck:selfhealing": "node scripts/generate-self-healing-beginner-deck.mjs",
+    "deck:selfhealing:stepwise": "node scripts/generate-self-healing-stepwise-management-deck.mjs",
+    "deck:board:exec": "node scripts/generate-board-exec-low-tech-deck.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.51.0",

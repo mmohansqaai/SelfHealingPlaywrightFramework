@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const baseURL = process.env.BASE_URL ?? 'https://retail-website-two.vercel.app';
+const baseURL = process.env.BASE_URL ?? 'https://retail-website-fawn.vercel.app';
 
 export default defineConfig({
   testDir: './tests',

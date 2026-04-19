@@ -16,14 +16,17 @@ export class LoginPage {
       {
         name: 'getByLabel-Email',
         resolve: (p) => p.getByLabel(/email/i),
+        source: { filePath: 'pages/login.page.ts', methodName: 'emailStrategies', actionKey: 'login-email' },
       },
       {
         name: 'placeholder-email',
         resolve: (p) => p.locator('input[type="email"], input[name*="email" i], input[id*="email" i]').first(),
+        source: { filePath: 'pages/login.page.ts', methodName: 'emailStrategies', actionKey: 'login-email' },
       },
       {
         name: 'role-textbox-first',
         resolve: (p) => p.getByRole('textbox').first(),
+        source: { filePath: 'pages/login.page.ts', methodName: 'emailStrategies', actionKey: 'login-email' },
       },
     ];
   }
@@ -33,10 +36,12 @@ export class LoginPage {
       {
         name: 'getByLabel-Password',
         resolve: (p) => p.getByLabel(/password/i),
+        source: { filePath: 'pages/login.page.ts', methodName: 'passwordStrategies', actionKey: 'login-password' },
       },
       {
         name: 'input-password',
         resolve: (p) => p.locator('input[type="password"]').first(),
+        source: { filePath: 'pages/login.page.ts', methodName: 'passwordStrategies', actionKey: 'login-password' },
       },
     ];
   }
@@ -46,14 +51,17 @@ export class LoginPage {
       {
         name: 'role-button-Sign-in',
         resolve: (p) => p.getByRole('button', { name: /sign in/i }),
+        source: { filePath: 'pages/login.page.ts', methodName: 'submitStrategies', actionKey: 'login-submit' },
       },
       {
         name: 'submit-type',
         resolve: (p) => p.locator('button[type="submit"], input[type="submit"]').first(),
+        source: { filePath: 'pages/login.page.ts', methodName: 'submitStrategies', actionKey: 'login-submit' },
       },
       {
         name: 'text-Sign-in',
         resolve: (p) => p.getByText(/^sign in$/i).first(),
+        source: { filePath: 'pages/login.page.ts', methodName: 'submitStrategies', actionKey: 'login-submit' },
       },
     ];
   }

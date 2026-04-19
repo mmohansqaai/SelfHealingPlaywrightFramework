@@ -1,0 +1,52 @@
+{
+  "https://example.local/login|fill|css:input[type=\"email\"]": {
+    "successes": 1,
+    "failures": 0,
+    "lastUsedAt": "2026-04-14T10:28:13.999Z"
+  },
+  "https://retail-website-two.vercel.app/login|visible|css:[data-testid], [aria-label], button, input, a": {
+    "successes": 2,
+    "failures": 0,
+    "lastUsedAt": "2026-04-16T07:14:41.681Z"
+  },
+  "https://retail-website-two.vercel.app/login|fill|css:input[type=\"email\"], input[name*=\"email\" i], input[id*=\"email\" i]": {
+    "successes": 2,
+    "failures": 0,
+    "lastUsedAt": "2026-04-16T07:14:46.701Z"
+  },
+  "https://retail-website-two.vercel.app/login|fill|css:input[type=\"password\"], input[name*=\"password\" i], input[id*=\"password\" i]": {
+    "successes": 2,
+    "failures": 0,
+    "lastUsedAt": "2026-04-16T07:14:51.736Z"
+  },
+  "https://retail-website-two.vercel.app/login|click|role:button:Sign in": {
+    "successes": 2,
+    "failures": 0,
+    "lastUsedAt": "2026-04-16T07:14:56.784Z"
+  },
+  "https://retail-website-two.vercel.app/app/products|visible|css:[data-testid], [aria-label], button, input, a": {
+    "successes": 4,
+    "failures": 0,
+    "lastUsedAt": "2026-04-16T12:36:00.926Z"
+  },
+  "https://retail-website-two.vercel.app/app/cart|click|css:[data-testid], [aria-label], button, input, a": {
+    "successes": 3,
+    "failures": 0,
+    "lastUsedAt": "2026-04-16T12:20:37.829Z"
+  },
+  "https://retail-website-two.vercel.app/app/products|click|css:[data-testid], [aria-label], button, input, a": {
+    "successes": 0,
+    "failures": 1,
+    "lastUsedAt": "2026-04-16T12:25:02.897Z"
+  },
+  "https://retail-website-two.vercel.app/app/products|click|role:button:Add to cart": {
+    "successes": 1,
+    "failures": 0,
+    "lastUsedAt": "2026-04-16T12:36:14.969Z"
+  },
+  "https://retail-website-two.vercel.app/app/checkout|click|role:button:Checkout": {
+    "successes": 1,
+    "failures": 0,
+    "lastUsedAt": "2026-04-16T12:36:37.197Z"
+  }
+}
