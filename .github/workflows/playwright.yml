@@ -48,24 +48,26 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
-      # test-results/ is gitignored; hashFiles() ignores gitignored paths, so use a filesystem check.
-      # Playwright only creates this dir when writing traces/screenshots/videos (e.g. failures/retries).
-      - name: Check for test-results artifacts
-        id: test_results_artifacts
+      # test-results/ is gitignored. upload-artifact@v4 matches paths with gitignore rules, so a direct
+      # path of test-results/ can upload 0 files even when traces exist on disk — zip first, then upload the zip.
+      - name: Package test-results for artifact (if any)
+        id: test_results_pkg
         if: always()
         run: |
+          rm -f test-results-upload.zip
           if find test-results -type f -print -quit 2>/dev/null | grep -q .; then
+            ( cd test-results && zip -qr ../test-results-upload.zip . )
             echo "has_artifacts=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_artifacts=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Upload test results (traces, screenshots)
-        if: always() && steps.test_results_artifacts.outputs.has_artifacts == 'true'
+        if: always() && steps.test_results_pkg.outputs.has_artifacts == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: test-results/
+          path: test-results-upload.zip
           retention-days: 7
 
       - name: Warm dashboard API (Render cold start)
