@@ -50,7 +50,7 @@ jobs:
 
       # test-results/ exists only when Playwright writes traces/screenshots/videos (e.g. failures/retries).
       - name: Upload test results (traces, screenshots)
-        if: always()
+        if: always() && hashFiles('test-results/**') != ''
         uses: actions/upload-artifact@v4
         with:
           name: test-results
