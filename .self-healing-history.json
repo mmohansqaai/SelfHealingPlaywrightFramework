@@ -1,8 +1,8 @@
 {
   "https://example.local/login|fill|css:input[type=\"email\"]": {
-    "successes": 1,
+    "successes": 2,
     "failures": 0,
-    "lastUsedAt": "2026-04-14T10:28:13.999Z"
+    "lastUsedAt": "2026-04-19T18:41:16.583Z"
   },
   "https://retail-website-two.vercel.app/login|visible|css:[data-testid], [aria-label], button, input, a": {
     "successes": 2,

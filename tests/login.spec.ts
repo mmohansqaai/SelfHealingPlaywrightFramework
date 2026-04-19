@@ -1,4 +1,5 @@
 import { attachHealingSummary } from '../core/healing-reporter';
+import { failIfDemoDashboardMetrics } from './demo-dashboard-failures';
 import { expect, test } from './fixtures';
 
 test.describe('Retail login (self-healing)', () => {
@@ -7,6 +8,7 @@ test.describe('Retail login (self-healing)', () => {
     const loaded = await login.expectLoaded();
     await attachHealingSummary(testInfo, 'page-loaded', loaded);
     expect(loaded.usedStrategy).toBeTruthy();
+    failIfDemoDashboardMetrics();
   });
 
   test('customer demo login succeeds', async ({ page, loginPage: login }, testInfo) => {

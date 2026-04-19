@@ -18,6 +18,8 @@ jobs:
     env:
       CI: "true"
       BASE_URL: "https://retail-website-fawn.vercel.app"
+      # Two tests call failIfDemoDashboardMetrics() → 6 pass / 2 fail for dashboard metrics (unset locally).
+      DEMO_DASHBOARD_FAILURES: "1"
 
     steps:
       - name: Checkout
