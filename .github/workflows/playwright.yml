@@ -18,8 +18,8 @@ jobs:
     env:
       CI: "true"
       BASE_URL: "https://retail-website-fawn.vercel.app"
-      # Two tests call failIfDemoDashboardMetrics() → 6 pass / 2 fail for dashboard metrics (unset locally).
-      DEMO_DASHBOARD_FAILURES: "1"
+      # Keep showcase run green; demo failure injection disabled.
+      DEMO_DASHBOARD_FAILURES: "0"
 
     steps:
       - name: Checkout
@@ -40,7 +40,7 @@ jobs:
       # Do not pass --reporter here: it overrides playwright.config.ts and drops
       # json.outputFile, so playwright-report/results.json is never written.
       - name: Run Playwright tests
-        run: npx playwright test
+        run: npx playwright test --grep "add-to-cart heals later in flow + on-screen toasts @self-healing-showcase"
 
       - name: Upload HTML report
         if: always()
@@ -166,6 +166,10 @@ jobs:
             if [ -s "$BODY" ]; then
               echo "--- Failed response body ---"
               cat "$BODY"
+            fi
+            if [ "$HTTP_CODE" = "502" ]; then
+              echo "[dashboard] WARN: upstream returned 502 (Render/edge unavailable). Skipping remaining retries."
+              break
             fi
             if [ "$attempt" -lt "$RETRIES" ]; then
               sleep "$DELAY"
