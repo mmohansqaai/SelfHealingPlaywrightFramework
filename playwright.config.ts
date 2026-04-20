@@ -23,7 +23,7 @@ export default defineConfig({
     baseURL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    video: 'on',
+    video: 'off',
     // Set PW_USE_SYSTEM_CHROME=1 to use installed Google Chrome (skip `npm run install:browsers`).
     ...(process.env.PW_USE_SYSTEM_CHROME === '1' ? { channel: 'chrome' as const } : {}),
   },
