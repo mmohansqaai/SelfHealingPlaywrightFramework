@@ -8,7 +8,7 @@ export default defineConfig({
   ...(process.env.RUN_TRACEABILITY === '1'
     ? {}
     : { testIgnore: ['**/traceability/**'] }),
-  // Created when traces/screenshots/videos are written (e.g. failures); may be absent on all-green runs.
+  // Stores traces/screenshots/videos for each run.
   outputDir: 'test-results',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
@@ -23,7 +23,7 @@ export default defineConfig({
     baseURL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    video: 'on-first-retry',
+    video: 'on',
     // Set PW_USE_SYSTEM_CHROME=1 to use installed Google Chrome (skip `npm run install:browsers`).
     ...(process.env.PW_USE_SYSTEM_CHROME === '1' ? { channel: 'chrome' as const } : {}),
   },
