@@ -132,13 +132,15 @@ jobs:
           attempt=1
           while [ "$attempt" -le "$RETRIES" ]; do
             echo "[dashboard] curl attempt ${attempt}/${RETRIES}"
-            HTTP_CODE="$(curl -sS --max-time "$MAXT" -X POST "$URL" \
+            set +e
+            HTTP_CODE="$(curl --http1.1 -sS --max-time "$MAXT" -X POST "$URL" \
               -H "X-Ingest-Token: ${DASHBOARD_INGEST_TOKEN}" \
               -D "$HDR" -o "$BODY" \
               -F "payload=@payload.json;type=application/json" \
               -F "report_zip=@report.zip;type=application/zip" \
               -w '%{http_code}')"
             CURL_EXIT=$?
+            set -e
             if [ "$CURL_EXIT" -eq 0 ] && [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
               echo ""
               echo "--- Response headers ---"
