@@ -19,6 +19,11 @@ function miss(name: string, selector: string): LocatorStrategy {
   return { name, resolve: (p) => p.locator(selector) };
 }
 
+function formatHealedLocator(query: unknown): string {
+  if (!query) return 'n/a';
+  return JSON.stringify(query);
+}
+
 async function toast(
   page: Page,
   title: string,
@@ -92,7 +97,8 @@ test.describe('Auto-heal late-flow demo (Nova Retail)', () => {
     await expectVisibleHealing(page, [], { actionType: 'visible', autoHeal: demoAutoHeal });
 
     // Force a miss on purpose; auto-heal discovers the real "Add to cart" from live DOM.
-    const addToCart = await clickHealing(page, [miss('add-to-cart-miss-demo', 'button[data-demo-miss-add=\"1\"]')], {
+    const brokenLocator = 'button[data-demo-miss-add="1"]';
+    const addToCart = await clickHealing(page, [miss('add-to-cart-miss-demo', brokenLocator)], {
       actionType: 'click',
       autoHeal: demoAutoHeal,
       timeoutPerStrategyMs: 6_000,
@@ -101,17 +107,18 @@ test.describe('Auto-heal late-flow demo (Nova Retail)', () => {
     await toast(
       page,
       'Broken test step detected',
-      `Observed issue:\n- Add-to-cart locator did not match the current DOM\n- Failed locator attempts: ${failedAttempts}\n\nAction:\n- Triggering self-healing candidate discovery before marking the step failed`,
+      `Observed issue:\n- Add-to-cart locator did not match the current DOM\n- Broken locator: ${brokenLocator}\n- Failed locator attempts: ${failedAttempts}\n\nAction:\n- Triggering self-healing candidate discovery before marking the step failed`,
       'warn'
     );
     await page.waitForTimeout(DEMO_PAUSE_MS);
 
     const selected = addToCart.autoHeal?.selectedCandidate;
     const picked = selected ? `${selected.strategyName} (score=${selected.score})` : addToCart.usedStrategy;
+    const healedLocator = formatHealedLocator(selected?.query);
     await toast(
       page,
       'Healing details',
-      `Recovery result:\n- Auto-heal selected: ${picked}\n- Step resumed without manual script changes\n\nEvidence:\n- Attempt history and selected candidate are attached in the report`,
+      `Recovery result:\n- Auto-heal selected: ${picked}\n- Healed locator: ${healedLocator}\n- Step resumed without manual script changes\n\nEvidence:\n- Attempt history and selected candidate are attached in the report`,
       'ok'
     );
     await page.waitForTimeout(DEMO_PAUSE_MS);
