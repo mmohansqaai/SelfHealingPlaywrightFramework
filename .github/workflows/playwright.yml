@@ -107,6 +107,7 @@ jobs:
           fi
 
           node scripts/build-dashboard-payload.mjs playwright-report/results.json payload.json
+          node -e 'const fs=require("node:fs");const p=JSON.parse(fs.readFileSync("payload.json","utf8"));console.log(`[dashboard] payload summary: suite_name="${p.suite_name}", environment="${p.environment}", build_version="${p.build_version}", test_cases=${Array.isArray(p.test_cases)?p.test_cases.length:0}`)'
           ( cd playwright-report && zip -qr ../report.zip . )
 
           URL="${DASHBOARD_URL}/api/ingest/github-actions/run-with-report"
@@ -131,11 +132,14 @@ jobs:
           attempt=1
           while [ "$attempt" -le "$RETRIES" ]; do
             echo "[dashboard] curl attempt ${attempt}/${RETRIES}"
-            if curl -f -sS --max-time "$MAXT" -X POST "$URL" \
+            HTTP_CODE="$(curl -sS --max-time "$MAXT" -X POST "$URL" \
               -H "X-Ingest-Token: ${DASHBOARD_INGEST_TOKEN}" \
               -D "$HDR" -o "$BODY" \
               -F "payload=@payload.json;type=application/json" \
-              -F "report_zip=@report.zip;type=application/zip"; then
+              -F "report_zip=@report.zip;type=application/zip" \
+              -w '%{http_code}')"
+            CURL_EXIT=$?
+            if [ "$CURL_EXIT" -eq 0 ] && [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
               echo ""
               echo "--- Response headers ---"
               cat "$HDR"
@@ -152,7 +156,15 @@ jobs:
               fi
               exit 0
             fi
-            echo "[dashboard] curl failed (exit $?)"
+            echo "[dashboard] curl failed (exit ${CURL_EXIT}, http ${HTTP_CODE})"
+            if [ -s "$HDR" ]; then
+              echo "--- Failed response headers ---"
+              cat "$HDR"
+            fi
+            if [ -s "$BODY" ]; then
+              echo "--- Failed response body ---"
+              cat "$BODY"
+            fi
             if [ "$attempt" -lt "$RETRIES" ]; then
               sleep "$DELAY"
             fi
