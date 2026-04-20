@@ -173,4 +173,5 @@ jobs:
             attempt=$((attempt + 1))
           done
           echo "[dashboard] All curl attempts failed"
-          exit 1
+          echo "[dashboard] WARN: continuing workflow despite ingest failure"
+          exit 0
