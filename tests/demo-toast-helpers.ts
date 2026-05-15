@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import type { LocatorStrategy } from '../core/healing-types';
 
 export const DEMO_TOAST_MS = Number(process.env.DEMO_TOAST_MS || (process.env.CI ? 12_000 : 22_000));
@@ -6,6 +6,15 @@ export const DEMO_PAUSE_MS = Number(process.env.DEMO_PAUSE_MS || (process.env.CI
 
 export function miss(name: string, selector: string): LocatorStrategy {
   return { name, resolve: (p) => p.locator(selector) };
+}
+
+/** Navigate to Products and confirm we are authenticated (not bounced to /login). */
+export async function ensureCustomerOnProductsPage(page: Page): Promise<void> {
+  await page.goto('/app/products', { waitUntil: 'domcontentloaded', timeout: 60_000 });
+  if (/\/login/i.test(page.url())) {
+    throw new Error(`Not authenticated — redirected to login (${page.url()}). Check demo credentials.`);
+  }
+  await expect(page.getByRole('heading', { name: /^Products$/i })).toBeVisible({ timeout: 30_000 });
 }
 
 export function formatHealedLocator(query: unknown, fallbackStrategy?: string): string {

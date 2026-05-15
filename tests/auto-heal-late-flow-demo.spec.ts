@@ -1,10 +1,10 @@
-import type { Page } from '@playwright/test';
 import { attachLiveAutoHealProof } from '../core/healing-reporter';
 import { clickHealing } from '../core/self-healing';
 import { expect, test } from './fixtures';
 import {
   DEMO_PAUSE_MS,
   demoHealingToast,
+  ensureCustomerOnProductsPage,
   formatHealedLocator,
   hideHealingModeIndicator,
   miss,
@@ -16,14 +16,6 @@ const demoAutoHeal = {
   discoverOnly: true as const,
   minConfidence: 70,
 };
-
-async function ensureCustomerOnProductsPage(page: Page): Promise<void> {
-  await page.goto('/app/products', { waitUntil: 'domcontentloaded', timeout: 60_000 });
-  if (/\/login/i.test(page.url())) {
-    throw new Error(`Not authenticated — redirected to login (${page.url()}). Check demo credentials.`);
-  }
-  await expect(page.getByRole('heading', { name: /^Products$/i })).toBeVisible({ timeout: 30_000 });
-}
 
 test.describe('Auto-heal discovery showcase (Nova Retail)', () => {
   test.beforeAll(() => {
