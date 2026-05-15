@@ -1,8 +1,8 @@
 import type { Page } from '@playwright/test';
 import type { LocatorStrategy } from '../core/healing-types';
 
-export const DEMO_TOAST_MS = Number(process.env.DEMO_TOAST_MS || 22_000);
-export const DEMO_PAUSE_MS = Number(process.env.DEMO_PAUSE_MS || 8_000);
+export const DEMO_TOAST_MS = Number(process.env.DEMO_TOAST_MS || (process.env.CI ? 12_000 : 22_000));
+export const DEMO_PAUSE_MS = Number(process.env.DEMO_PAUSE_MS || (process.env.CI ? 4_000 : 8_000));
 
 export function miss(name: string, selector: string): LocatorStrategy {
   return { name, resolve: (p) => p.locator(selector) };

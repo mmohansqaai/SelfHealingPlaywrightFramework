@@ -64,10 +64,15 @@ export async function loginAsCustomer(page: Page, testInfo?: TestInfo): Promise<
   if (testInfo) await attachHealingSummary(testInfo, 'login-email', email);
   const password = await login.fillPassword(CUSTOMER_PASSWORD);
   if (testInfo) await attachHealingSummary(testInfo, 'login-password', password);
-  const submit = await login.submit();
-  if (testInfo) await attachHealingSummary(testInfo, 'login-submit', submit);
-  // SPA may leave /login without landing exactly on /app immediately; match login.spec.ts.
-  await expect(page).not.toHaveURL(/\/login\/?$/, { timeout: 45_000 });
+  await Promise.all([
+    page.waitForURL((url) => !/\/login\/?$/.test(url.pathname), { timeout: 60_000 }),
+    (async () => {
+      const submit = await login.submit();
+      if (testInfo) await attachHealingSummary(testInfo, 'login-submit', submit);
+    })(),
+  ]);
+  await page.waitForURL(/\/app/, { timeout: 30_000, waitUntil: 'commit' }).catch(() => {});
+  await expect(page).not.toHaveURL(/\/login\/?$/, { timeout: 15_000 });
   await page.waitForLoadState('domcontentloaded');
 }
 
