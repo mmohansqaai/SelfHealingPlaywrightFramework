@@ -13,6 +13,71 @@ export function formatHealedLocator(query: unknown, fallbackStrategy?: string): 
   return fallbackStrategy ?? 'n/a';
 }
 
+export type HealingDemoMode = 'static' | 'dynamic';
+
+const MODE_LABEL: Record<HealingDemoMode, string> = {
+  static: 'STATIC HEALING',
+  dynamic: 'DYNAMIC HEALING (AUTO-DISCOVERY)',
+};
+
+const MODE_COLOR: Record<HealingDemoMode, string> = {
+  static: 'rgba(37, 99, 235, 0.96)',
+  dynamic: 'rgba(124, 58, 237, 0.96)',
+};
+
+/** Persistent badge for the whole test run so viewers always see the healing mode. */
+export async function showHealingModeIndicator(page: Page, mode: HealingDemoMode): Promise<void> {
+  const label = MODE_LABEL[mode];
+  const bg = MODE_COLOR[mode];
+  await page.evaluate(
+    ({ label, bg }) => {
+      const id = 'sh-healing-mode-badge';
+      document.getElementById(id)?.remove();
+      const badge = document.createElement('div');
+      badge.id = id;
+      badge.style.position = 'fixed';
+      badge.style.top = '16px';
+      badge.style.left = '16px';
+      badge.style.zIndex = '2147483647';
+      badge.style.padding = '10px 14px';
+      badge.style.borderRadius = '999px';
+      badge.style.background = bg;
+      badge.style.color = 'white';
+      badge.style.fontFamily = 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial';
+      badge.style.fontSize = '12px';
+      badge.style.fontWeight = '700';
+      badge.style.letterSpacing = '0.04em';
+      badge.style.boxShadow = '0 8px 20px rgba(0,0,0,0.28)';
+      badge.style.border = '1px solid rgba(255,255,255,0.22)';
+      badge.style.pointerEvents = 'none';
+      badge.textContent = label;
+      document.documentElement.appendChild(badge);
+    },
+    { label, bg }
+  );
+}
+
+export async function hideHealingModeIndicator(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    document.getElementById('sh-healing-mode-badge')?.remove();
+  });
+}
+
+/** Toast with explicit STATIC vs DYNAMIC labeling in title and body. */
+export async function demoHealingToast(
+  page: Page,
+  mode: HealingDemoMode,
+  title: string,
+  message: string,
+  kind: 'info' | 'warn' | 'ok' = 'info',
+  ms: number = DEMO_TOAST_MS
+): Promise<void> {
+  const modeLine = `Healing type: ${MODE_LABEL[mode]}`;
+  const taggedTitle = `[${mode === 'static' ? 'STATIC' : 'DYNAMIC'}] ${title}`;
+  const taggedMessage = `${modeLine}\n\n${message}`;
+  await demoToast(page, taggedTitle, taggedMessage, kind, ms);
+}
+
 export async function demoToast(
   page: Page,
   title: string,

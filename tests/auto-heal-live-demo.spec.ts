@@ -23,8 +23,8 @@ function miss(name: string, selector: string): LocatorStrategy {
 
 test.describe('Auto-heal live demo (Nova Retail)', () => {
   test.beforeAll(() => {
-    process.env.AUTO_HEAL_DISCOVER = '1';
     delete process.env.AUTO_HEAL_PERSIST;
+    delete process.env.AUTO_HEAL_DISCOVER;
   });
 
   test('customer login — auto-heal discovery + auto-heal-live-proof attachment', async ({ page, loginPage: login }, testInfo) => {

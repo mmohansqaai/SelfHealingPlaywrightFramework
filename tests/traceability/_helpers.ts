@@ -66,7 +66,9 @@ export async function loginAsCustomer(page: Page, testInfo?: TestInfo): Promise<
   if (testInfo) await attachHealingSummary(testInfo, 'login-password', password);
   const submit = await login.submit();
   if (testInfo) await attachHealingSummary(testInfo, 'login-submit', submit);
-  await page.waitForURL(/\/app(\/|$)/, { timeout: 25_000 });
+  // SPA may leave /login without landing exactly on /app immediately; match login.spec.ts.
+  await expect(page).not.toHaveURL(/\/login\/?$/, { timeout: 45_000 });
+  await page.waitForLoadState('domcontentloaded');
 }
 
 export async function loginAsAdmin(page: Page, testInfo?: TestInfo): Promise<void> {

@@ -4,9 +4,11 @@ import { expect, test } from './fixtures';
 import { loginAsCustomer } from './traceability/_helpers';
 import {
   DEMO_PAUSE_MS,
-  demoToast,
+  demoHealingToast,
   formatHealedLocator,
+  hideHealingModeIndicator,
   miss,
+  showHealingModeIndicator,
 } from './demo-toast-helpers';
 
 const demoAutoHeal = {
@@ -17,23 +19,36 @@ const demoAutoHeal = {
 
 test.describe('Auto-heal discovery showcase (Nova Retail)', () => {
   test.beforeAll(() => {
-    process.env.AUTO_HEAL_DISCOVER = '1';
     delete process.env.AUTO_HEAL_PERSIST;
+    delete process.env.AUTO_HEAL_DISCOVER;
   });
 
   test('add-to-cart — auto-heal discovery + on-screen toasts @auto-heal-discovery-showcase', async ({ page }, testInfo) => {
     testInfo.setTimeout(180_000);
+    // Login with static fallbacks only (no global AUTO_HEAL_DISCOVER during setup).
     await loginAsCustomer(page, testInfo);
 
-    await demoToast(
+    await showHealingModeIndicator(page, 'dynamic');
+    await demoHealingToast(
       page,
-      'Auto-heal discovery (dynamic healing)',
-      'Mode:\n- Static strategies fail first (decoy locator)\n- Engine discovers a new locator from live DOM semantics\n\nWhat you will see:\n- Broken locator\n- Healed locator from auto-discovery',
+      'dynamic',
+      'Setup complete (login used static fallbacks)',
+      'Note:\n- Customer login above used predefined static strategies only\n- The showcase step below uses DYNAMIC auto-heal discovery',
+      'info',
+      14_000
+    );
+    await page.waitForTimeout(DEMO_PAUSE_MS);
+
+    await demoHealingToast(
+      page,
+      'dynamic',
+      'Showcase started — auto-heal discovery',
+      'How it works:\n- Decoy locator fails first\n- Engine discovers a new locator from live DOM semantics\n\nWhat you will see:\n- Broken locator\n- Healed locator from auto-discovery',
       'info'
     );
     await page.waitForTimeout(DEMO_PAUSE_MS);
 
-    await page.goto('/app/products');
+    await page.goto('/app/products', { waitUntil: 'domcontentloaded' });
     await expectVisibleHealing(page, [], { actionType: 'visible', autoHeal: demoAutoHeal });
 
     const brokenLocator = 'button[data-demo-miss-add="1"]';
@@ -44,10 +59,11 @@ test.describe('Auto-heal discovery showcase (Nova Retail)', () => {
     });
 
     const failedAttempts = addToCart.attempts.filter((a) => !a.ok).length;
-    await demoToast(
+    await demoHealingToast(
       page,
+      'dynamic',
       'Broken test step detected',
-      `Observed issue:\n- Add-to-cart locator did not match the current DOM\n- Broken locator: ${brokenLocator}\n- Failed locator attempts: ${failedAttempts}\n\nAction:\n- Triggering auto-heal discovery from page semantics`,
+      `Observed issue:\n- Add-to-cart locator did not match the current DOM\n- Broken locator: ${brokenLocator}\n- Failed locator attempts: ${failedAttempts}\n\nAction:\n- Triggering DYNAMIC auto-heal discovery from page semantics`,
       'warn'
     );
     await page.waitForTimeout(DEMO_PAUSE_MS);
@@ -55,9 +71,10 @@ test.describe('Auto-heal discovery showcase (Nova Retail)', () => {
     const selected = addToCart.autoHeal?.selectedCandidate;
     const picked = selected ? `${selected.strategyName} (score=${selected.score})` : addToCart.usedStrategy;
     const healedLocator = formatHealedLocator(selected?.query, addToCart.usedStrategy);
-    await demoToast(
+    await demoHealingToast(
       page,
-      'Healing details (auto-discovery)',
+      'dynamic',
+      'Healing details',
       `Recovery result:\n- Auto-heal selected: ${picked}\n- Healed locator: ${healedLocator}\n- Step resumed without manual script changes\n\nEvidence:\n- Attempt history is attached in the report`,
       'ok'
     );
@@ -71,5 +88,6 @@ test.describe('Auto-heal discovery showcase (Nova Retail)', () => {
       { title: 'add-to-cart', result: addToCart },
       { title: 'cart-ready', result: cartReady },
     ]);
+    await hideHealingModeIndicator(page);
   });
 });
