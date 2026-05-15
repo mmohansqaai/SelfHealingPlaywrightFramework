@@ -40,7 +40,7 @@ jobs:
       # Do not pass --reporter here: it overrides playwright.config.ts and drops
       # json.outputFile, so playwright-report/results.json is never written.
       - name: Run Playwright tests
-        run: npx playwright test --grep "@self-healing-showcase"
+        run: npx playwright test --grep "@static-healing-showcase|@auto-heal-discovery-showcase"
 
       - name: Upload HTML report
         if: always()

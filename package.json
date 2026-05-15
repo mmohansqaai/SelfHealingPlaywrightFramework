@@ -12,11 +12,15 @@
     "test:traceability": "RUN_TRACEABILITY=1 playwright test tests/traceability",
     "test:auto-heal-live-demo": "playwright test tests/auto-heal-live-demo.spec.ts",
     "test:auto-heal-late-flow-demo": "playwright test tests/auto-heal-late-flow-demo.spec.ts",
+    "test:static-healing-showcase": "playwright test --grep @static-healing-showcase",
+    "test:auto-heal-discovery-showcase": "playwright test --grep @auto-heal-discovery-showcase",
+    "test:healing-showcases": "playwright test --grep \"@static-healing-showcase|@auto-heal-discovery-showcase\"",
     "deck:board": "node scripts/generate-board-deck.mjs",
     "deck:beginner": "node scripts/generate-beginner-technical-deck.mjs",
     "deck:selfhealing": "node scripts/generate-self-healing-beginner-deck.mjs",
     "deck:selfhealing:stepwise": "node scripts/generate-self-healing-stepwise-management-deck.mjs",
-    "deck:board:exec": "node scripts/generate-board-exec-low-tech-deck.mjs"
+    "deck:board:exec": "node scripts/generate-board-exec-low-tech-deck.mjs",
+    "deck:pm": "node scripts/generate-pm-presentation-deck.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.51.0",
