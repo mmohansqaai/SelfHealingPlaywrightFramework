@@ -15,6 +15,8 @@ const demoAutoHeal = {
   enabled: true as const,
   discoverOnly: true as const,
   minConfidence: 70,
+  /** Strategy 2 only: hint-based seed rules (DOM scan has its own showcase). */
+  discoveryStrategies: ['seed'] as const,
 };
 
 test.describe('Auto-heal discovery showcase (Nova Retail)', () => {
@@ -45,7 +47,7 @@ test.describe('Auto-heal discovery showcase (Nova Retail)', () => {
       page,
       'dynamic',
       'On Products page — demo starting',
-      `Current URL: ${page.url()}\n\nYou should see the product catalog on screen.\nNext: we intentionally use a broken Add to cart locator, then auto-heal discovers the real button.`,
+      `Current URL: ${page.url()}\n\nMode: Strategy 2 — seed rules from failure hints (DOM scan OFF).\n\nNext: broken Add to cart locator, then hint-based discovery finds the real button.`,
       'info'
     );
     await page.waitForTimeout(DEMO_PAUSE_MS);

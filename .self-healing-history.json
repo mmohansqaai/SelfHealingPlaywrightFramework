@@ -1,8 +1,8 @@
 {
   "https://example.local/login|fill|css:input[type=\"email\"]": {
-    "successes": 3,
+    "successes": 4,
     "failures": 0,
-    "lastUsedAt": "2026-04-20T09:10:19.259Z"
+    "lastUsedAt": "2026-05-19T07:35:00.026Z"
   },
   "https://retail-website-two.vercel.app/login|visible|css:[data-testid], [aria-label], button, input, a": {
     "successes": 2,
@@ -48,5 +48,10 @@
     "successes": 1,
     "failures": 0,
     "lastUsedAt": "2026-04-16T12:36:37.197Z"
+  },
+  "https://retail-website-fawn.vercel.app/app/products|click|role:button:Add to cart": {
+    "successes": 2,
+    "failures": 0,
+    "lastUsedAt": "2026-05-19T08:22:41.321Z"
   }
 }

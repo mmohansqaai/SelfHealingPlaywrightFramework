@@ -1,5 +1,7 @@
 import type { Locator, Page } from '@playwright/test';
-import { discoverAutoHealingCandidates, generatedQueryKey, generatedQueryToLocatorFactory } from './auto-heal-discovery';
+import { createDefaultDiscoverer } from './discovery/compose-discoverers';
+import type { DiscoveryStrategyName } from './discovery/compose-discoverers';
+import { generatedQueryKey, generatedQueryToLocatorFactory } from './locator-query';
 import { recordHistoryOutcome } from './auto-heal-history';
 import { persistGeneratedLocator } from './auto-heal-persistence';
 import type {
@@ -39,6 +41,8 @@ type AutoHealOptions = {
   minConfidence?: number;
   persistTarget?: AutoHealPersistTarget;
   validationPasses?: number;
+  /** Ordered discovery strategies: `seed` (rules), `dom-scan` (full DOM inventory). */
+  discoveryStrategies?: DiscoveryStrategyName[];
   discoverer?: (args: {
     page: Page;
     actionType: ActionType;
@@ -110,8 +114,11 @@ export async function withHealingPage<T>(
   }
 
   if (autoConfig.enabled) {
-    const discover = autoConfig.discoverer ?? ((args: { page: Page; actionType: ActionType; attempts: HealingAttempt[] }) =>
-      discoverAutoHealingCandidates(args));
+    const discover =
+      autoConfig.discoverer ??
+      createDefaultDiscoverer({
+        strategies: autoConfig.discoveryStrategies,
+      });
     const generated = await discover({ page, actionType, attempts });
     const candidates: GeneratedLocatorCandidate[] = [];
     for (const c of generated) {

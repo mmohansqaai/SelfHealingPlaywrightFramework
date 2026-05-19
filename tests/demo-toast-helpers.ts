@@ -22,16 +22,24 @@ export function formatHealedLocator(query: unknown, fallbackStrategy?: string): 
   return fallbackStrategy ?? 'n/a';
 }
 
-export type HealingDemoMode = 'static' | 'dynamic';
+export type HealingDemoMode = 'static' | 'dynamic' | 'dom-scan';
 
 const MODE_LABEL: Record<HealingDemoMode, string> = {
   static: 'STATIC HEALING',
-  dynamic: 'DYNAMIC HEALING (AUTO-DISCOVERY)',
+  dynamic: 'DYNAMIC HEALING (SEED RULES)',
+  'dom-scan': 'DOM SCAN HEALING (FULL PAGE INVENTORY)',
 };
 
 const MODE_COLOR: Record<HealingDemoMode, string> = {
   static: 'rgba(37, 99, 235, 0.96)',
   dynamic: 'rgba(124, 58, 237, 0.96)',
+  'dom-scan': 'rgba(5, 150, 105, 0.96)',
+};
+
+const MODE_TAG: Record<HealingDemoMode, string> = {
+  static: 'STATIC',
+  dynamic: 'DYNAMIC',
+  'dom-scan': 'DOM SCAN',
 };
 
 /** Persistent badge for the whole test run so viewers always see the healing mode. */
@@ -82,7 +90,7 @@ export async function demoHealingToast(
   ms: number = DEMO_TOAST_MS
 ): Promise<void> {
   const modeLine = `Healing type: ${MODE_LABEL[mode]}`;
-  const taggedTitle = `[${mode === 'static' ? 'STATIC' : 'DYNAMIC'}] ${title}`;
+  const taggedTitle = `[${MODE_TAG[mode]}] ${title}`;
   const taggedMessage = `${modeLine}\n\n${message}`;
   await demoToast(page, taggedTitle, taggedMessage, kind, ms);
 }

@@ -22,12 +22,23 @@ When an action runs (fill/click/wait):
 
 Healing implementation lives in `core/self-healing.ts` and is used by page objects like `pages/login.page.ts`.
 
+### Three discovery layers (auto-heal)
+
+1. **Static** — ordered `LocatorStrategy` chains in page objects (no DOM scan).
+2. **Seed rules** — `core/discovery/seed-discovery.ts` (hint-based candidates from failed attempts).
+3. **DOM scan** — `core/discovery/dom-scan-discovery.ts` (in-page inventory → synthesized locators → live `count()` validation).
+
+When `autoHeal.enabled` is true, strategies **2 + 3** run by default (merged by `core/discovery/compose-discoverers.ts`). Disable DOM scan with `AUTO_HEAL_DOM_SCAN=0` or `AUTO_HEAL_STRATEGIES=seed`.
+
+**Showcase tests** (silent login, toasts on Products): `@static-healing-showcase`, `@auto-heal-discovery-showcase` (seed only), `@dom-scan-healing-showcase` (DOM scan only). Run all: `npm run test:healing-showcases`.
+
 ## Project structure
 
 - **`core/`**
   - `self-healing.ts`: healing engine (`withHealingPage`) + helpers (`fillHealing`, `clickHealing`, `expectVisibleHealing`)
   - `healing-types.ts`: `LocatorStrategy`, `HealingResult`
   - `healing-reporter.ts`: attaches healing details to the HTML report
+  - `discovery/`: pluggable auto-heal strategies (`seed`, `dom-scan`) + composer
 - **`pages/`**
   - `login.page.ts`: page object with locator strategy chains for the login page
   - `retail-journey.page.ts`: self-healing flow for products → cart → checkout → order confirmation
