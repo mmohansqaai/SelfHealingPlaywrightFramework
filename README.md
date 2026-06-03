@@ -170,3 +170,12 @@ Workflow file: `.github/workflows/playwright.yml`
 
 **Building the Real-Time Testing Dashboard API** (ingest contract, Render, GitHub): see [`docs/dashboard-ingest.md`](docs/dashboard-ingest.md).
 
+## Presentations
+
+| Asset | Command |
+|--------|---------|
+| **Technical deck** (stack, architecture, 3 strategies, dashboard) | `npm run deck:technical` → `docs/Self-Healing-Technical-Presentation.pptx` |
+| **Execution flow diagram** (purple/pink gradient) | [`docs/Self-Healing-Framework-Flow-Diagram.svg`](docs/Self-Healing-Framework-Flow-Diagram.svg) |
+| **Speaker notes** (what to say per slide) | [`docs/Self-Healing-Technical-Presentation-Speaker-Notes.md`](docs/Self-Healing-Technical-Presentation-Speaker-Notes.md) |
+| PM / executive deck | `npm run deck:pm` |
+
