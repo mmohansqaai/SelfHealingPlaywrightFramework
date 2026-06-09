@@ -3,7 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "description": "Playwright tests with multi-strategy self-healing locators",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
+    "build:sdk": "npm run build -w ai-healing-sdk",
     "test": "playwright test",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
@@ -23,6 +27,9 @@
     "deck:board:exec": "node scripts/generate-board-exec-low-tech-deck.mjs",
     "deck:pm": "node scripts/generate-pm-presentation-deck.mjs",
     "deck:technical": "node scripts/generate-technical-presentation-deck.mjs"
+  },
+  "dependencies": {
+    "ai-healing-sdk": "workspace:*"
   },
   "devDependencies": {
     "@playwright/test": "^1.51.0",

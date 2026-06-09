@@ -27,3 +27,6 @@ export {
   fillHealing,
   withHealingPage,
 } from './self-healing';
+
+// Phase 1 SDK entry points (also available via ai-healing-sdk package)
+export { enableHealing, healable } from '../packages/ai-healing-sdk/src';
