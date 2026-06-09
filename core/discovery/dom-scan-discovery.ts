@@ -3,5 +3,5 @@ export {
   scanDomElements,
   discoverFromDomScan,
   domScanDiscoveryStrategy,
-} from '../../packages/ai-healing-sdk/src/core/discovery/dom-scan-discovery';
-export type { DomElementSnapshot } from '../../packages/ai-healing-sdk/src/core/discovery/dom-scan-discovery';
+} from 'ai-healing-sdk';
+export type { DomElementSnapshot } from 'ai-healing-sdk';

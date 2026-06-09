@@ -4,8 +4,8 @@ export type {
   HealingResult,
   LocatorStrategy,
   LocatorSource,
-} from './healing-types';
-export { attachHealingSummary, attachLiveAutoHealProof, formatHealingBody } from './healing-reporter';
+} from 'ai-healing-sdk';
+export { attachHealingSummary, attachLiveAutoHealProof, formatHealingBody } from 'ai-healing-sdk';
 export {
   discoverAutoHealingCandidates,
   discoverFromDomScan,
@@ -16,17 +16,15 @@ export {
   resolveDiscoveryStrategyNames,
   generatedQueryKey,
   generatedQueryToLocatorFactory,
-} from './auto-heal-discovery';
-export type { AutoHealContext, DomElementSnapshot, ComposeDiscoveryOptions, DiscoveryStrategyName } from './auto-heal-discovery';
-export { synthesizeCandidatesFromDomSnapshots } from './auto-heal-discovery';
-export { historyFilePath, recordHistoryOutcome } from './auto-heal-history';
-export { persistGeneratedLocator } from './auto-heal-persistence';
+} from 'ai-healing-sdk';
+export type { AutoHealContext, DomElementSnapshot, ComposeDiscoveryOptions, DiscoveryStrategyName } from 'ai-healing-sdk';
+export { synthesizeCandidatesFromDomSnapshots } from 'ai-healing-sdk';
+export { historyFilePath, recordHistoryOutcome } from 'ai-healing-sdk';
+export { persistGeneratedLocator } from 'ai-healing-sdk';
 export {
   clickHealing,
   expectVisibleHealing,
   fillHealing,
   withHealingPage,
-} from './self-healing';
-
-// Phase 1 SDK entry points (also available via ai-healing-sdk package)
-export { enableHealing, healable } from '../packages/ai-healing-sdk/src';
+} from 'ai-healing-sdk';
+export { enableHealing, healable } from 'ai-healing-sdk';

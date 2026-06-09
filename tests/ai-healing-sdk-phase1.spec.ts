@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { enableHealing, healable } from '../packages/ai-healing-sdk/src';
+import { enableHealing, healable } from 'ai-healing-sdk';
 import type { GeneratedLocatorCandidate, LocatorStrategy } from '../core/healing-types';
 import { withHealingPage } from '../core/self-healing';
 

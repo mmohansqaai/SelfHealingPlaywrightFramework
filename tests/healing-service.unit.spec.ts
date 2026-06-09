@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import type { HealingRequest } from '../packages/ai-healing-sdk/src/transport/contracts';
+import type { HealingRequest } from 'ai-healing-sdk';
 
 test.describe('healing-service contract (unit)', () => {
   test('POST /heal returns healed candidates for add-to-cart hints', async () => {

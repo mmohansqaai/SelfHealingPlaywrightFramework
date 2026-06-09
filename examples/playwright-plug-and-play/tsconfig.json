@@ -6,11 +6,7 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "outDir": "dist",
-    "rootDir": ".",
     "types": ["node", "@playwright/test"]
   },
-  "include": ["**/*.ts"],
-  "exclude": ["node_modules", "dist", "examples/**", "packages/**/dist", "services/**/dist", "agents/**/dist"]
+  "include": ["tests/**/*.ts", "playwright.config.ts"]
 }

@@ -6,4 +6,4 @@ export type {
   HealingAttempt,
   HealingResult,
   HealingActionType,
-} from '../packages/ai-healing-sdk/src/core/healing-types';
+} from 'ai-healing-sdk';

@@ -13,6 +13,7 @@ export { DEFAULT_HEALING_SDK_CONFIG, resolveHealingSdkConfig, sdkConfigToEngineO
 
 // Locator healing module
 export * from './core/locator-healing';
+export { hasSignal, failureHints } from './core/discovery/intent-hints';
 
 // Core types
 export type {

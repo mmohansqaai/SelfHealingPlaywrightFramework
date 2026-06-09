@@ -10,6 +10,10 @@
   ],
   "scripts": {
     "build:sdk": "npm run build -w ai-healing-sdk",
+    "pack:sdk": "npm run build:sdk && mkdir -p dist-packages && npm pack -w ai-healing-sdk --pack-destination ./dist-packages",
+    "install:plug-and-play-demo": "npm run build:sdk && npm install --prefix examples/playwright-plug-and-play",
+    "test:plug-and-play": "npm run install:plug-and-play-demo && npm run test:headed --prefix examples/playwright-plug-and-play",
+    "test:plug-and-play:ci": "npm run install:plug-and-play-demo && npm test --prefix examples/playwright-plug-and-play",
     "build:locator-agent": "npm run build:sdk && npm run build -w locator-agent",
     "build:healing-service": "npm run build:sdk && npm run build -w locator-agent && npm run build -w healing-service",
     "test:locator-agent-phase3": "HEALING_SERVICE_URL=http://localhost:3921 AUTO_HEAL_DISCOVER=1 playwright test --config=playwright.phase3.config.ts --headed",

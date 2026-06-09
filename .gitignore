@@ -1,11 +1,8 @@
 node_modules/
 dist/
+dist-packages/
 playwright-report/
+playwright-report-plug-and-play/
 test-results/
-blob-report/
-playwright/.cache/
-.env
-*.log
-# Dashboard ingest (CI / local curl)
-payload.json
-report.zip
+*.tgz
+.DS_Store

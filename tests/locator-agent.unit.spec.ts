@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { runLocatorAgent } from '../agents/locator-agent/src';
-import type { HealingRequest } from '../packages/ai-healing-sdk/src/transport/contracts';
+import type { HealingRequest } from 'ai-healing-sdk';
 
 const sampleRequest: HealingRequest = {
   framework: 'playwright',

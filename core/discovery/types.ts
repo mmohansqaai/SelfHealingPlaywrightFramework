@@ -1,1 +1,1 @@
-export type { AutoHealContext, DiscoveryStrategy } from '../../packages/ai-healing-sdk/src/core/discovery/types';
+export type { AutoHealContext, DiscoveryStrategy } from 'ai-healing-sdk';
