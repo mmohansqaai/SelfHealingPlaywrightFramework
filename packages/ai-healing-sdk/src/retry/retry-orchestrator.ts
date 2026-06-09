@@ -11,7 +11,8 @@ import type {
   HealingActionType,
 } from '../core/healing-types';
 import { formatExhaustedStrategiesError, recordStrategyFailure } from '../interceptors/failure-handler';
-import { createLocalDiscoverer, type DiscovererFn } from '../transport/local-transport';
+import type { DiscovererFn } from '../transport/local-transport';
+import { resolveDefaultDiscoverer } from '../transport/resolve-discoverer';
 import { envTruthy } from '../utils/env';
 
 const DEFAULT_PER_STRATEGY_MS = 5_000;
@@ -94,7 +95,7 @@ export async function withHealingPage<T>(
   if (autoConfig.enabled) {
     const discover =
       autoConfig.discoverer ??
-      createLocalDiscoverer({
+      resolveDefaultDiscoverer({
         discoveryStrategies: autoConfig.discoveryStrategies,
       });
     const generated = await discover({ page, actionType, attempts });

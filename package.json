@@ -4,10 +4,17 @@
   "private": true,
   "description": "Playwright tests with multi-strategy self-healing locators",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "services/*",
+    "agents/*"
   ],
   "scripts": {
     "build:sdk": "npm run build -w ai-healing-sdk",
+    "build:locator-agent": "npm run build:sdk && npm run build -w locator-agent",
+    "build:healing-service": "npm run build:sdk && npm run build -w locator-agent && npm run build -w healing-service",
+    "test:locator-agent-phase3": "HEALING_SERVICE_URL=http://localhost:3921 AUTO_HEAL_DISCOVER=1 playwright test --config=playwright.phase3.config.ts --headed",
+    "healing-service": "npm run build:healing-service && npm run start -w healing-service",
+    "test:healing-service-phase2": "HEALING_SERVICE_URL=http://localhost:3921 AUTO_HEAL_DISCOVER=1 playwright test --config=playwright.phase2.config.ts --headed",
     "test": "playwright test",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
@@ -29,7 +36,7 @@
     "deck:technical": "node scripts/generate-technical-presentation-deck.mjs"
   },
   "dependencies": {
-    "ai-healing-sdk": "workspace:*"
+    "ai-healing-sdk": "file:packages/ai-healing-sdk"
   },
   "devDependencies": {
     "@playwright/test": "^1.51.0",

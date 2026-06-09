@@ -1,8 +1,8 @@
 {
   "https://example.local/login|fill|css:input[type=\"email\"]": {
-    "successes": 7,
+    "successes": 9,
     "failures": 0,
-    "lastUsedAt": "2026-06-09T18:58:29.219Z"
+    "lastUsedAt": "2026-06-09T19:13:25.647Z"
   },
   "https://retail-website-two.vercel.app/login|visible|css:[data-testid], [aria-label], button, input, a": {
     "successes": 2,
@@ -55,8 +55,13 @@
     "lastUsedAt": "2026-05-19T08:22:41.321Z"
   },
   "https://example.local/login|click|css:button[type=\"submit\"]": {
-    "successes": 1,
+    "successes": 3,
     "failures": 0,
-    "lastUsedAt": "2026-06-09T18:58:29.181Z"
+    "lastUsedAt": "2026-06-09T19:13:25.667Z"
+  },
+  "https://retail-website-fawn.vercel.app/app/cart|click|role:button:Cart 0": {
+    "successes": 3,
+    "failures": 0,
+    "lastUsedAt": "2026-06-09T19:15:00.624Z"
   }
 }

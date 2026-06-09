@@ -42,9 +42,20 @@ export { historyFilePath, recordHistoryOutcome, getHistoryWeight } from './core/
 // Reporters
 export { attachHealingSummary, attachLiveAutoHealProof, formatHealingBody } from './reporters/healing-reporter';
 
-// Transport (Phase 1 local; Phase 2 remote)
+// Transport (Phase 1 local; Phase 2 healing-service HTTP)
 export { createLocalDiscoverer } from './transport/local-transport';
 export type { DiscovererFn, LocalTransportOptions } from './transport/local-transport';
+export { createHttpDiscoverer, isHealingServiceEnabled } from './transport/http-transport';
+export type { HttpTransportOptions } from './transport/http-transport';
+export { resolveDefaultDiscoverer } from './transport/resolve-discoverer';
+export type { ResolveDiscovererOptions } from './transport/resolve-discoverer';
+export type {
+  HealingRequest,
+  HealingResponse,
+  HealingResponseCandidate,
+} from './transport/contracts';
+export { formatLocatorQuery, confidenceFromScore } from './transport/contracts';
+export { discoverSeedCandidatesOffline } from './core/locator-recovery/offline-seed-discovery';
 
 // Telemetry
 export { emitTelemetry, onTelemetry } from './telemetry/telemetry';
