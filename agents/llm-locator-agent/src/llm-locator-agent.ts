@@ -1,4 +1,4 @@
-import type { HealingRequest } from 'ai-healing-sdk';
+import type { AgentValidationResult, GeneratedLocatorCandidate, HealingRequest } from 'ai-healing-sdk';
 import {
   listHeuristicCandidatesOffline,
   formatLocatorQuery,
@@ -48,14 +48,16 @@ function buildToolContext(request: HealingRequest) {
     },
   ];
 
-  const heuristicCandidates = heuristic.map((c) => ({
+  const heuristicCandidates = heuristic.map((c: GeneratedLocatorCandidate) => ({
     healedLocator: formatLocatorQuery(c.query),
     score: c.score,
     reason: c.reason,
   }));
 
   const priorFailedLocators =
-    request.agentContext?.priorValidationResults?.filter((r) => !r.ok).map((r) => r.healedLocator) ?? [];
+    request.agentContext?.priorValidationResults
+      ?.filter((r: AgentValidationResult) => !r.ok)
+      .map((r: AgentValidationResult) => r.healedLocator) ?? [];
 
   const llmContext: LlmProposeContext = {
     action: request.action,
@@ -94,8 +96,8 @@ function proposalsToCandidates(
   }));
 }
 
-function heuristicToScored(heuristic: Awaited<ReturnType<typeof listHeuristicCandidatesOffline>>): ScoredLocatorCandidate[] {
-  return heuristic.map((c) => ({
+function heuristicToScored(heuristic: GeneratedLocatorCandidate[]): ScoredLocatorCandidate[] {
+  return heuristic.map((c: GeneratedLocatorCandidate) => ({
     ...c,
     confidence: Math.min(1, c.score / 100),
     contributions: [
