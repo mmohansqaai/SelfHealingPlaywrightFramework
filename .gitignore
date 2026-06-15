@@ -4,5 +4,9 @@ dist-packages/
 playwright-report/
 playwright-report-plug-and-play/
 test-results/
+autonomous-review/
+maintenance-output/
+.maintenance-failures.json
+.maintenance-jira-published.json
 *.tgz
 .DS_Store

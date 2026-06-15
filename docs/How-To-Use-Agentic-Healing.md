@@ -442,7 +442,191 @@ HEALING_SERVICE_URL=http://localhost:3921 AUTO_HEAL_DISCOVER=1 npm test
 
 ---
 
-## 16. Next steps
+## 15. Phase 8 — Autonomous login (NL goal, zero locators in spec)
+
+Run a journey from a **natural-language goal** with no pre-written locators in the test file. The mock planner parses login credentials from the goal text; actions use hint-based discovery plus agentic healing on failure.
+
+```typescript
+import { test, expect } from '@playwright/test';
+import { enableHealing, runAutonomousTest, attachAutonomousTrace } from 'ai-healing-sdk';
+
+test('autonomous login @autonomous-login', async ({ page }, testInfo) => {
+  enableHealing(page, { healingEnabled: true, agentMode: 'agentic' });
+
+  const result = await runAutonomousTest(page, {
+    goal: 'Log in with test@demo.com / password123 and leave the login page.',
+    startUrl: '/login',
+    maxSteps: 25,
+    healOnFailure: true,
+  });
+
+  await attachAutonomousTrace(testInfo, result);
+
+  expect(result.status).toBe('completed');
+  await expect(page).not.toHaveURL(/\/login\/?$/);
+});
+```
+
+```bash
+# Build workspace packages, then run the demo
+npm run test:autonomous-login
+```
+
+Optional: `POST /autonomous/plan` on `healing-service` returns the same mock plan JSON (execution stays in the SDK).
+
+---
+
+## 16. Phase 9 — Multi-step checkout + verification + replan
+
+Autonomous journeys now support **add-to-cart → checkout** with:
+
+- **Verification agent** — URL, cart, and products checks recorded in `result.verifications`
+- **Replan on assertion failure** — up to `maxReplans` recovery steps (default 2)
+- **10-journey evaluation set** — `NOVA_RETAIL_EVALUATION_JOURNEYS` in `autonomous-test-agent`
+
+```typescript
+const result = await runAutonomousTest(page, {
+  goal: 'Log in with test@demo.com / password123, add the first product to cart, and reach checkout.',
+  startUrl: '/login',
+  maxSteps: 30,
+  maxReplans: 2,
+  timeoutPerActionMs: 20_000,
+});
+```
+
+```bash
+npm run test:autonomous-checkout
+# All autonomous demos + evaluation plan unit tests
+npm run test:autonomous
+RUN_UNIT_TESTS=1 npx playwright test tests/autonomous-evaluation.unit.spec.ts
+```
+
+---
+
+## 17. Phase 10 — Production governance (CI-safe autonomous suite)
+
+Production-ready autonomous runs add **env-based secrets**, **domain allowlists**, **cost caps**, **human review**, and **suite KPIs**.
+
+### Environment variables
+
+| Variable | Purpose | Example |
+|----------|---------|---------|
+| `AUTONOMOUS_CUSTOMER_EMAIL` | Injected into `{{CUSTOMER_EMAIL}}` goals | `test@demo.com` |
+| `AUTONOMOUS_CUSTOMER_PASSWORD` | Injected into `{{CUSTOMER_PASSWORD}}` goals | (set in CI secrets) |
+| `AUTONOMOUS_ALLOWED_DOMAINS` | Comma-separated hostname allowlist | `vercel.app` |
+| `AUTONOMOUS_MAX_COST_USD` | Per-run cost cap (estimated) | `0.25` |
+| `AUTONOMOUS_MAX_SUITE_COST_USD` | Suite rollup cap | `0.50` |
+| `AUTONOMOUS_PLANNER` | `mock` (CI default) or `llm` | `mock` |
+
+### Secret-safe goals (recommended for CI)
+
+```typescript
+import { AUTONOMOUS_GOAL_TEMPLATES, runAutonomousSuite, AUTONOMOUS_CI_SMOKE_JOURNEYS } from 'ai-healing-sdk';
+
+const suite = await runAutonomousSuite(page, AUTONOMOUS_CI_SMOKE_JOURNEYS, {
+  defaults: {
+    plannerMode: 'mock',
+    governance: { maxCostUsdPerRun: 0.25, maxCostUsdPerSuite: 0.5 },
+  },
+});
+// suite.kpis.goalCompletionRate, avgStepsExecuted, totalEstimatedCostUsd
+```
+
+Templates use placeholders — never commit real passwords in goal strings:
+
+```text
+Log in with {{CUSTOMER_EMAIL}} / {{CUSTOMER_PASSWORD}}, add the first product to cart, and reach checkout.
+```
+
+### Human review + generated specs
+
+Failed runs set `result.governance.needsHumanReview = true`. Attach review package to the HTML report or write artifacts:
+
+```typescript
+import { attachAutonomousHumanReview, writeAutonomousReviewArtifact } from 'ai-healing-sdk';
+
+if (result.governance.needsHumanReview) {
+  await attachAutonomousHumanReview(testInfo, result);
+  writeAutonomousReviewArtifact(result); // autonomous-review/*.txt, *.json, optional *.spec.ts
+}
+```
+
+### CI / nightly
+
+```bash
+npm run test:autonomous-ci-smoke
+```
+
+GitHub Actions: `.github/workflows/autonomous-nightly.yml` (schedule + manual dispatch). Release-gate PR CI still runs healing showcases only; autonomous smoke is a separate governed job.
+
+---
+
+## 18. Phase 11 — Maintenance agent (locator persistence + tickets)
+
+After autonomous runs, the **maintenance agent** tracks repeated failures, proposes locator patches for human PR review, and emits Jira/Linear-ready ticket JSON.
+
+### Enable
+
+```bash
+MAINTENANCE_AGENT=1 npm run test:autonomous-ci-smoke
+```
+
+| Variable | Purpose |
+|----------|---------|
+| `MAINTENANCE_AGENT` | Run maintenance analysis after each autonomous journey |
+| `MAINTENANCE_TICKET_THRESHOLD` | Failures before ticket creation (default `3`) |
+| `MAINTENANCE_OUTPUT_DIR` | Artifacts root (default `maintenance-output/`) |
+| `MAINTENANCE_TICKET_PROVIDER` | `mock`, `jira`, or `linear` |
+| `MAINTENANCE_PROPOSE_PERSIST` | Set to `0` to skip locator proposals |
+| `MAINTENANCE_PUBLISH_JIRA` | Set to `1` to create Jira issues via REST API (requires `JIRA_*` below) |
+| `JIRA_BASE_URL` | Jira Cloud site URL (e.g. `https://yourteam.atlassian.net`) |
+| `JIRA_EMAIL` | Atlassian account email for API token auth |
+| `JIRA_API_TOKEN` | [API token](https://id.atlassian.com/manage-profile/security/api-tokens) |
+| `JIRA_PROJECT_KEY` | Project key (e.g. `QA`) |
+| `JIRA_ISSUE_TYPE` | Optional issue type name (default `Bug`) |
+
+### Workflow
+
+1. **Healed steps** → persistence proposal JSON + `*-APPLY.md` in `maintenance-output/patches/` (pending review)
+2. **Failed steps** → failure counter in `.maintenance-failures.json`
+3. **Repeated failures** (≥ threshold) → ticket JSON in `maintenance-output/tickets/`
+4. **After human approval** → `applyMaintenanceProposal('path/to/proposal.json')` writes to page objects
+
+```typescript
+import { runAutonomousTestWithMaintenance, runMaintenanceAgentAsync, applyMaintenanceProposal } from 'ai-healing-sdk';
+
+const { result, maintenance } = await runAutonomousTestWithMaintenance(page, options);
+// maintenance?.proposals, maintenance?.tickets
+
+// With live Jira publish after CI smoke:
+const maintenance = await runMaintenanceAgentAsync(result, {
+  publishTicketsLive: process.env.MAINTENANCE_PUBLISH_JIRA === '1',
+});
+// maintenance.publishResults → [{ published, externalId, externalUrl, ... }]
+
+// Post-review:
+applyMaintenanceProposal('maintenance-output/patches/prop-fill-email-123.json');
+```
+
+### Live Jira publish
+
+When `MAINTENANCE_PUBLISH_JIRA=1` and `JIRA_*` credentials are set, the SDK calls Jira Cloud REST API v3 and dedupes by failure ID (`.maintenance-jira-published.json`).
+
+```bash
+# After a smoke run with repeated failures:
+MAINTENANCE_PUBLISH_JIRA=1 npm run publish:maintenance-tickets
+
+# Or inline during CI smoke:
+MAINTENANCE_AGENT=1 MAINTENANCE_PUBLISH_JIRA=1 npm run test:autonomous-ci-smoke
+```
+
+GitHub Actions: add repository secrets `JIRA_BASE_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN`, `JIRA_PROJECT_KEY` and set `MAINTENANCE_PUBLISH_JIRA: "1"` in `.github/workflows/autonomous-nightly.yml` when ready.
+
+Manual / MCP: use `formatJiraIssueFields(ticket)` for custom integrations.
+
+---
+
+## 19. Next steps
 
 1. Start with **Tier 1** in your project (`healable` + `AUTO_HEAL_DISCOVER=1`).
 2. Add **HTML report attachments** for visibility.

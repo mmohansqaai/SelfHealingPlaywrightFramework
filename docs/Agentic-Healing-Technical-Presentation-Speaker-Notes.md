@@ -126,12 +126,33 @@ Healing ≠ fixing wrong assertions. discussOnly in demos.
 
 ---
 
-## Slide 20 — Roadmap
+## Slide 20 — Roadmap Delivered (Phases 8–11)
 
-Point to PRD for full phased plan.
+Highlight that autonomous login, checkout, governance, and maintenance are **shipped** — not future work.
 
 ---
 
-## Slide 21 — Thank You
+## Slide 21 — Autonomous Phases Table
 
-Offer live demo: `npm run test:plug-and-play` or `npm run test:healing-showcases -- --headed`.
+Quick reference: Phase 8 login MVP → Phase 11 maintenance + Jira.
+
+---
+
+## Slide 22 — Phase 8–11 Demo Commands
+
+Live demo path: `test:autonomous-login` → `test:autonomous-checkout` → CI smoke with `MAINTENANCE_AGENT=1`.
+
+Optional: show Jira ticket if `MAINTENANCE_PUBLISH_JIRA=1` is configured.
+
+---
+
+## Slide 23 — Future Enhancements
+
+Vision agent, SaaS, npm publish — what comes after Phases 8–11.
+
+---
+
+## Slide 24 — Thank You
+
+Offer live demo: `npm run test:autonomous-login` or `npm run test:healing-showcases -- --headed`.
+Regenerate deck: `npm run deck:agentic`.

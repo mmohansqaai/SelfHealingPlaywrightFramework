@@ -76,3 +76,78 @@ export type { TelemetryEvent } from './telemetry/telemetry';
 
 // Interceptors
 export { recordStrategyFailure, formatExhaustedStrategiesError } from './interceptors/failure-handler';
+
+// Phase 8 — autonomous test agent
+export { runAutonomousTest, runAutonomousTestWithMaintenance, formatAutonomousTraceBody } from './autonomous/run-autonomous-test';
+export type { AutonomousRunWithMaintenance } from './autonomous/run-autonomous-test';
+export { executeAutonomousStep } from './autonomous/execute-step';
+export { getAutonomousPageState } from './autonomous/get-page-state';
+export { strategiesForHint, strategiesForHeading, strategiesForText, assertDomainAllowed } from './autonomous/strategies-for-hint';
+export { runVerificationAgent, summarizeVerifications } from './autonomous/verification-agent';
+export { attachAutonomousTrace } from './reporters/healing-reporter';
+export type {
+  AutonomousAction,
+  AutonomousPlannedStep,
+  AutonomousPlanRequest,
+  AutonomousPlanResponse,
+  AutonomousRunOptions,
+  AutonomousRunResult,
+  AutonomousStepTrace,
+  AutonomousPageState,
+  AutonomousVerificationRecord,
+  AutonomousReplanRequest,
+} from 'autonomous-agent-contracts';
+export { replanAfterAssertionFailure, isAssertionAction, NOVA_RETAIL_EVALUATION_JOURNEYS, AUTONOMOUS_CI_SMOKE_JOURNEYS, AUTONOMOUS_GOAL_TEMPLATES } from 'autonomous-test-agent';
+export type { EvaluationJourney } from 'autonomous-test-agent';
+
+// Phase 10 — production governance
+export { runAutonomousSuite } from './autonomous/suite-runner';
+export type { RunAutonomousSuiteOptions } from './autonomous/suite-runner';
+export {
+  resolveAutonomousSecretsFromEnv,
+  injectSecretsIntoGoal,
+  resolveAutonomousGovernanceFromEnv,
+  assertPlannerAllowedForCi,
+  isDomainAllowed,
+  goalUsesSecretPlaceholders,
+} from './autonomous/governance';
+export { estimateAutonomousRunCostUsd, isCostWithinCap } from './autonomous/cost-estimator';
+export { buildAutonomousSuiteKpis, buildAutonomousSuiteResult, formatAutonomousSuiteKpisBody } from './autonomous/kpis';
+export { generatePlaywrightSpecFromTrace } from './autonomous/trace-to-spec';
+export { formatHumanReviewBody, writeAutonomousReviewArtifact } from './autonomous/human-review';
+export type { AutonomousReviewArtifact } from './autonomous/human-review';
+export { attachAutonomousSuiteKpis, attachAutonomousHumanReview } from './reporters/healing-reporter';
+export type {
+  AutonomousSecrets,
+  AutonomousGovernanceOptions,
+  AutonomousGovernanceRecord,
+  AutonomousSuiteKpis,
+  AutonomousSuiteResult,
+  AutonomousJourneyDefinition,
+  MaintenanceHealingSnapshot,
+  MaintenanceFailureRecord,
+  MaintenancePersistenceProposal,
+  MaintenanceTicketPayload,
+  MaintenanceAgentOptions,
+  MaintenanceAgentResult,
+  MaintenanceTicketPublishResult,
+} from 'autonomous-agent-contracts';
+
+// Phase 11 — maintenance agent
+export { runMaintenanceAgent, runMaintenanceAgentAsync, applyMaintenanceProposal } from './maintenance/maintenance-agent';
+export { recordMaintenanceFailure, listMaintenanceFailures, maintenanceFailureStorePath } from './maintenance/failure-tracker';
+export { createPersistenceProposal, writePersistenceProposal } from './maintenance/persistence-proposal';
+export { previewPersistencePatch, buildStrategySnippetForCandidate } from './core/persistence';
+export { buildMaintenanceTicket, writeMaintenanceTicket, formatJiraIssueFields, formatLinearIssueInput } from './maintenance/ticket-payload';
+export {
+  publishMaintenanceTicketsToJira,
+} from './maintenance/ticket-publisher';
+export {
+  resolveJiraConfigFromEnv,
+  isJiraPublishEnabled,
+  createJiraIssueFromTicket,
+  buildJiraCreateIssueBody,
+  maintenanceDescriptionToAdf,
+} from './maintenance/jira-client';
+export type { JiraClientConfig } from './maintenance/jira-client';
+export { NOVA_RETAIL_LOCATOR_TARGETS, resolveLocatorTarget, toHealingSnapshot, snapshotToCandidate } from './maintenance/locator-target-map';

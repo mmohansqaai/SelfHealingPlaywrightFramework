@@ -1,0 +1,80 @@
+# Phase 10 — autonomous nightly / CI smoke (governed, mock planner, env secrets)
+name: Autonomous Nightly
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  autonomous-smoke:
+    name: Autonomous CI smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      CI: "true"
+      RUN_AUTONOMOUS_CI: "1"
+      BASE_URL: "https://retail-website-fawn.vercel.app"
+      AUTONOMOUS_ALLOWED_DOMAINS: "vercel.app"
+      AUTONOMOUS_MAX_COST_USD: "0.25"
+      AUTONOMOUS_MAX_SUITE_COST_USD: "0.50"
+      AUTONOMOUS_CUSTOMER_EMAIL: "test@demo.com"
+      AUTONOMOUS_CUSTOMER_PASSWORD: "password123"
+      AUTONOMOUS_PLANNER: "mock"
+      MAINTENANCE_AGENT: "1"
+      MAINTENANCE_TICKET_THRESHOLD: "3"
+      # Live Jira — add repository secrets: JIRA_BASE_URL, JIRA_EMAIL, JIRA_API_TOKEN, JIRA_PROJECT_KEY
+      MAINTENANCE_PUBLISH_JIRA: "1"
+      JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+      JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+      JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+      JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build workspace packages
+        run: npm run build:autonomous-agent
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run autonomous CI smoke
+        run: npm run test:autonomous-ci-smoke
+
+      - name: Upload maintenance artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maintenance-output
+          path: maintenance-output/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload autonomous review artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: autonomous-review
+          path: autonomous-review/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: autonomous-playwright-report
+          path: playwright-report/
+          retention-days: 7

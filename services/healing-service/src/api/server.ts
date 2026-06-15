@@ -1,4 +1,5 @@
 import express from 'express';
+import { postAutonomousPlan } from './autonomous-plan-route';
 import { postHeal } from './heal-route';
 
 export function createHealingServer() {
@@ -10,6 +11,7 @@ export function createHealingServer() {
   });
 
   app.post('/heal', postHeal);
+  app.post('/autonomous/plan', postAutonomousPlan);
 
   return app;
 }

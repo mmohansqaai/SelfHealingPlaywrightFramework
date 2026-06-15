@@ -28,6 +28,10 @@
       "optional": false
     }
   },
+  "dependencies": {
+    "autonomous-agent-contracts": "file:../autonomous-agent-contracts",
+    "autonomous-test-agent": "file:../../agents/autonomous-test-agent"
+  },
   "keywords": [
     "playwright",
     "self-healing",

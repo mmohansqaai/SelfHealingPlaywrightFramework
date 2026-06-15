@@ -135,7 +135,7 @@ async function main() {
   titleSlide(
     pptx,
     'Agentic Self-Healing Playwright Framework',
-    'Architecture • Agent loop • LLM integration • Plug-and-play SDK • How to use'
+    'Architecture • Agent loop • Autonomous QA (Phases 8–11) • Plug-and-play SDK'
   );
 
   slide(pptx, 'Agenda', [
@@ -149,6 +149,7 @@ async function main() {
     'Configuration and environment variables',
     'Step-by-step: how to use in your project',
     'Governance, limitations, and roadmap',
+    'Phases 8–11: fully autonomous QA (delivered)',
   ]);
 
   slide(pptx, 'Executive Summary', [
@@ -381,14 +382,43 @@ async function main() {
     'npm run deck:agentic — regenerate this PowerPoint',
   ]);
 
-  slide(pptx, 'Roadmap', [
+  slide(pptx, 'Roadmap — Delivered (Phases 8–11)', [
+    'Phase 8 — Autonomous login MVP: runAutonomousTest() from NL goal, zero locators in spec.',
+    'Phase 9 — Multi-step checkout: verification agent, replan on assertion failure, 10-journey eval set.',
+    'Phase 10 — Production governance: env secrets, domain allowlist, cost caps, suite KPIs, CI smoke.',
+    'Phase 11 — Maintenance agent: locator persistence proposals (PR review), Jira tickets on repeated failure.',
+    'Fully autonomous QA loop: heal → run → verify → govern → maintain.',
+  ], 'Commands: npm run test:autonomous • test:autonomous-ci-smoke');
+
+  tableSlide(
+    pptx,
+    'Autonomous Phases at a Glance',
+    ['Phase', 'Capability', 'Key API / Command'],
+    [
+      ['8 — Login MVP', 'NL goal → Nova Retail login', 'runAutonomousTest()'],
+      ['9 — Checkout', 'Add-to-cart → checkout + replan', 'maxReplans, verification agent'],
+      ['10 — Governance', 'Secrets, cost caps, CI smoke', 'runAutonomousSuite(), KPIs JSON'],
+      ['11 — Maintenance', 'Patches + Jira on repeat failures', 'runMaintenanceAgentAsync()'],
+    ],
+    'PRD: docs/PRD-Fully-Autonomous-AI-Agent.md'
+  );
+
+  slide(pptx, 'Phase 8–11 — How to Demo', [
+    'npm run test:autonomous-login — single NL login goal',
+    'npm run test:autonomous-checkout — login + cart + checkout journey',
+    'npm run test:autonomous-ci-smoke — governed 2-journey suite with env secrets',
+    'MAINTENANCE_AGENT=1 — failure tracking + locator patch proposals',
+    'MAINTENANCE_PUBLISH_JIRA=1 + JIRA_* — live Jira ticket on repeated failures',
+    'npm run deck:agentic — regenerate this deck',
+  ]);
+
+  slide(pptx, 'Future Enhancements', [
     'Vision agent — screenshot analysis for canvas/shadow DOM cases.',
-    'Hosted healing-service SaaS option for enterprise adopters.',
+    'Hosted healing-service SaaS for enterprise adopters.',
     'npm publish ai-healing-sdk@2.x with migration guide.',
-    'Evaluation harness: held-out failure DOM set for heal-rate KPIs.',
-    'Human review queue for LLM-persisted locators (optional PR bot).',
-    'Dashboard widgets: agent heal rate, LLM cost per suite.',
-  ], 'PRD: docs/PRD-Agentic-AI-Conversion.md');
+    'Linear live publish (parallel to Jira integration).',
+    'Evaluation harness KPI dashboard widgets in Real-Time Testing Dashboard.',
+  ], 'Phases 8–11 complete — see docs/How-To-Use-Agentic-Healing.md');
 
   const end = pptx.addSlide();
   end.background = { color: C.navy };

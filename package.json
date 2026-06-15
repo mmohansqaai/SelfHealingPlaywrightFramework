@@ -16,13 +16,20 @@
     "test:plug-and-play:ci": "npm run install:plug-and-play-demo && npm test --prefix examples/playwright-plug-and-play",
     "build:locator-agent": "npm run build:sdk && npm run build -w locator-agent",
     "build:llm-provider": "npm run build -w llm-provider",
+    "build:autonomous-contracts": "npm run build -w autonomous-agent-contracts",
+    "build:autonomous-test-agent": "npm run build:autonomous-contracts && npm run build -w autonomous-test-agent",
+    "build:autonomous-agent": "npm run build:autonomous-test-agent && npm run build:llm-locator-agent",
     "build:llm-locator-agent": "npm run build:sdk && npm run build -w llm-provider && npm run build -w locator-agent && npm run build -w llm-locator-agent",
-    "build:healing-service": "npm run build:llm-locator-agent && npm run build -w healing-service",
+    "build:healing-service": "npm run build:autonomous-agent && npm run build -w healing-service",
+    "test:autonomous-login": "npm run build:autonomous-agent && playwright test tests/autonomous-login.spec.ts",
+    "test:autonomous-checkout": "npm run build:autonomous-agent && playwright test tests/autonomous-checkout.spec.ts",
+    "test:autonomous": "npm run build:autonomous-agent && playwright test tests/autonomous-login.spec.ts tests/autonomous-checkout.spec.ts",
+    "test:autonomous-ci-smoke": "npm run build:autonomous-agent && RUN_AUTONOMOUS_CI=1 playwright test tests/autonomous-ci-smoke.spec.ts",
     "test:locator-agent-phase3": "HEALING_SERVICE_URL=http://localhost:3921 AUTO_HEAL_DISCOVER=1 playwright test --config=playwright.phase3.config.ts --headed",
     "healing-service": "npm run build:healing-service && npm run start -w healing-service",
     "test:healing-service-phase2": "HEALING_SERVICE_URL=http://localhost:3921 AUTO_HEAL_DISCOVER=1 playwright test --config=playwright.phase2.config.ts --headed",
     "test:llm-agent": "npm run build:llm-locator-agent && RUN_UNIT_TESTS=1 playwright test tests/llm-provider.unit.spec.ts tests/llm-locator-agent.unit.spec.ts tests/agentic-healing.unit.spec.ts",
-    "test:unit": "npm run build:llm-locator-agent && RUN_UNIT_TESTS=1 playwright test tests/dom-scan-discovery.unit.spec.ts tests/healing-service.unit.spec.ts tests/locator-agent.unit.spec.ts tests/llm-provider.unit.spec.ts tests/llm-locator-agent.unit.spec.ts tests/agentic-healing.unit.spec.ts",
+    "test:unit": "npm run build:autonomous-agent && RUN_UNIT_TESTS=1 playwright test tests/dom-scan-discovery.unit.spec.ts tests/healing-service.unit.spec.ts tests/locator-agent.unit.spec.ts tests/llm-provider.unit.spec.ts tests/llm-locator-agent.unit.spec.ts tests/agentic-healing.unit.spec.ts tests/autonomous-test-agent.unit.spec.ts tests/autonomous-evaluation.unit.spec.ts tests/autonomous-governance.unit.spec.ts tests/maintenance-agent.unit.spec.ts tests/maintenance-jira.unit.spec.ts",
     "test": "playwright test",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
@@ -42,7 +49,8 @@
     "deck:board:exec": "node scripts/generate-board-exec-low-tech-deck.mjs",
     "deck:pm": "node scripts/generate-pm-presentation-deck.mjs",
     "deck:technical": "node scripts/generate-technical-presentation-deck.mjs",
-    "deck:agentic": "node scripts/generate-agentic-healing-deck.mjs"
+    "deck:agentic": "node scripts/generate-agentic-healing-deck.mjs",
+    "publish:maintenance-tickets": "npm run build:autonomous-agent && MAINTENANCE_PUBLISH_JIRA=1 node scripts/publish-maintenance-tickets.mjs"
   },
   "dependencies": {
     "ai-healing-sdk": "file:packages/ai-healing-sdk"

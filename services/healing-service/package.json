@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "ai-healing-sdk": "file:../../packages/ai-healing-sdk",
+    "autonomous-agent-contracts": "file:../../packages/autonomous-agent-contracts",
+    "autonomous-test-agent": "file:../../agents/autonomous-test-agent",
     "express": "^4.21.2",
     "llm-locator-agent": "file:../../agents/llm-locator-agent",
     "llm-provider": "file:../../packages/llm-provider",
