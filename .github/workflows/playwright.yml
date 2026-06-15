@@ -36,6 +36,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build workspace packages
+        run: npm run build:llm-locator-agent
+
       - name: Install Playwright browsers (with OS deps)
         run: npx playwright install --with-deps chromium
 

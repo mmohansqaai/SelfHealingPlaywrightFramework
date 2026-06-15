@@ -5,9 +5,11 @@ const baseURL = process.env.BASE_URL ?? 'https://retail-website-fawn.vercel.app'
 export default defineConfig({
   testDir: './tests',
   // Skip tests/traceability/ unless RUN_TRACEABILITY=1 (e.g. npm run test:traceability).
-  ...(process.env.RUN_TRACEABILITY === '1'
-    ? {}
-    : { testIgnore: ['**/traceability/**'] }),
+  // Skip *.unit.spec.ts unless RUN_UNIT_TESTS=1 (npm run test:llm-agent / test:unit).
+  testIgnore: [
+    ...(process.env.RUN_TRACEABILITY === '1' ? [] : ['**/traceability/**']),
+    ...(process.env.RUN_UNIT_TESTS === '1' ? [] : ['**/*.unit.spec.ts']),
+  ],
   // Stores traces/screenshots/videos for each run.
   outputDir: 'test-results',
   fullyParallel: true,
