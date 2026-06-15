@@ -28,6 +28,8 @@ jobs:
       MAINTENANCE_PUBLISH_CI_SUMMARY: "1"
       # Live Jira — add repository secrets: JIRA_BASE_URL, JIRA_EMAIL, JIRA_API_TOKEN, JIRA_PROJECT_KEY
       MAINTENANCE_PUBLISH_JIRA: "1"
+      JIRA_PUBLISH_EVERY_RUN: "1"
+      JIRA_CI_SUMMARY_ISSUE_TYPE: "Story,Task,Bug"
       JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
       JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
       JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
@@ -64,6 +66,12 @@ jobs:
 
       - name: Run autonomous CI smoke
         run: npm run test:autonomous-ci-smoke
+
+      - name: Publish Jira ticket (every run)
+        if: always()
+        run: npm run publish:ci-jira-ticket
+        env:
+          CI_RUN_STATUS: ${{ job.status }}
 
       - name: Upload maintenance artifacts
         if: always()

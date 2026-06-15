@@ -5,7 +5,7 @@ import {
   attachAutonomousTrace,
   AUTONOMOUS_CI_SMOKE_JOURNEYS,
   enableHealing,
-  publishAutonomousCiSummaryToJira,
+  writeCiRunContextForJira,
   resolveGithubActionsRunUrl,
   runAutonomousSuite,
   runMaintenanceAgentAsync,
@@ -59,22 +59,14 @@ test.describe('Phase 10 autonomous CI smoke @autonomous-ci-smoke', () => {
       }
     }
 
-    if (process.env.MAINTENANCE_PUBLISH_JIRA === '1') {
-      const ciSummary = await publishAutonomousCiSummaryToJira(suite, maintenanceResults, {
-        runUrl: resolveGithubActionsRunUrl(),
-        sha: process.env.GITHUB_SHA,
-        runId: process.env.GITHUB_RUN_ID,
-      });
-      if (ciSummary) {
-        await testInfo.attach('maintenance-jira-ci-summary', {
-          body: JSON.stringify(ciSummary, null, 2),
-          contentType: 'application/json',
-        });
-        if (!ciSummary.published && ciSummary.error) {
-          console.warn('[maintenance] Jira CI summary not published:', ciSummary.error);
-        }
-      }
-    }
+    writeCiRunContextForJira({
+      suite,
+      maintenanceResults,
+      sha: process.env.GITHUB_SHA,
+      runId: process.env.GITHUB_RUN_ID,
+      runUrl: resolveGithubActionsRunUrl(),
+      workflowStatus: 'success',
+    });
 
     expect(suite.suiteCostCapExceeded).toBe(false);
     expect(suite.kpis.goalCompletionRate).toBe(1);

@@ -50,7 +50,8 @@
     "deck:pm": "node scripts/generate-pm-presentation-deck.mjs",
     "deck:technical": "node scripts/generate-technical-presentation-deck.mjs",
     "deck:agentic": "node scripts/generate-agentic-healing-deck.mjs",
-    "publish:maintenance-tickets": "npm run build:autonomous-agent && MAINTENANCE_PUBLISH_JIRA=1 node scripts/publish-maintenance-tickets.mjs"
+    "publish:maintenance-tickets": "npm run build:autonomous-agent && MAINTENANCE_PUBLISH_JIRA=1 node scripts/publish-maintenance-tickets.mjs",
+    "publish:ci-jira-ticket": "npm run build:autonomous-agent && MAINTENANCE_PUBLISH_JIRA=1 node scripts/publish-ci-jira-ticket.mjs"
   },
   "dependencies": {
     "ai-healing-sdk": "file:packages/ai-healing-sdk"

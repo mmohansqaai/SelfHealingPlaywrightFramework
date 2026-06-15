@@ -8,6 +8,7 @@ import {
   maintenanceDescriptionToAdf,
   publishMaintenanceTicketsToJira,
   resolveJiraConfigFromEnv,
+  resolveCiSummaryIssueTypes,
 } from 'ai-healing-sdk';
 import type { AutonomousSuiteResult } from 'autonomous-agent-contracts';
 
@@ -80,6 +81,14 @@ test.describe('Jira maintenance publish unit', () => {
     delete process.env.JIRA_EMAIL;
     delete process.env.JIRA_API_TOKEN;
     delete process.env.JIRA_PROJECT_KEY;
+  });
+
+  test('resolveCiSummaryIssueTypes defaults to Story,Task,Bug', () => {
+    delete process.env.JIRA_CI_SUMMARY_ISSUE_TYPE;
+    expect(resolveCiSummaryIssueTypes()).toEqual(['Story', 'Task', 'Bug']);
+    process.env.JIRA_CI_SUMMARY_ISSUE_TYPE = 'Epic,Story';
+    expect(resolveCiSummaryIssueTypes()).toEqual(['Epic', 'Story']);
+    delete process.env.JIRA_CI_SUMMARY_ISSUE_TYPE;
   });
 
   test('buildCiRunSummaryDescription includes KPI block', () => {

@@ -147,11 +147,16 @@ export {
   isJiraPublishEnabled,
   createJiraIssue,
   createJiraIssueFromTicket,
+  createJiraIssueWithTypeFallback,
+  resolveCiSummaryIssueTypes,
   buildJiraCreateIssueBody,
   maintenanceDescriptionToAdf,
 } from './maintenance/jira-client';
 export {
   publishAutonomousCiSummaryToJira,
+  publishCiRunTicketEveryRun,
+  writeCiRunContextForJira,
+  readCiRunContextForJira,
   buildCiRunSummaryDescription,
   isCiSummaryPublishEnabled,
   resolveGithubActionsRunUrl,

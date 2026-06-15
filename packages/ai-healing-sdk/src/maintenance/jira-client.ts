@@ -9,10 +9,10 @@ export type JiraClientConfig = {
 };
 
 export function resolveJiraConfigFromEnv(): JiraClientConfig | null {
-  const baseUrl = process.env.JIRA_BASE_URL ?? process.env.ATLASSIAN_SITE_URL;
-  const email = process.env.JIRA_EMAIL ?? process.env.ATLASSIAN_EMAIL;
-  const apiToken = process.env.JIRA_API_TOKEN ?? process.env.ATLASSIAN_API_TOKEN;
-  const projectKey = process.env.JIRA_PROJECT_KEY;
+  const baseUrl = (process.env.JIRA_BASE_URL ?? process.env.ATLASSIAN_SITE_URL)?.trim();
+  const email = (process.env.JIRA_EMAIL ?? process.env.ATLASSIAN_EMAIL)?.trim();
+  const apiToken = (process.env.JIRA_API_TOKEN ?? process.env.ATLASSIAN_API_TOKEN)?.trim();
+  const projectKey = process.env.JIRA_PROJECT_KEY?.trim();
 
   if (!baseUrl || !email || !apiToken || !projectKey) return null;
 
@@ -136,4 +136,38 @@ export async function createJiraIssueFromTicket(
     },
     fetchImpl
   );
+}
+
+/** Try multiple issue type names (Scrum boards often use Story, not Task). */
+export function resolveCiSummaryIssueTypes(preferred?: string): string[] {
+  const raw = preferred ?? process.env.JIRA_CI_SUMMARY_ISSUE_TYPE ?? 'Story,Task,Bug';
+  const fromEnv = raw.split(',').map((s) => s.trim()).filter(Boolean);
+  if (preferred && !fromEnv.includes(preferred)) {
+    return [preferred, ...fromEnv];
+  }
+  return [...new Set(fromEnv)];
+}
+
+export async function createJiraIssueWithTypeFallback(
+  config: JiraClientConfig,
+  issue: { summary: string; description: string; issueType?: string; labels?: string[] },
+  fetchImpl: typeof fetch = fetch
+): Promise<{ ok: true; issueKey: string; issueUrl: string; issueType: string } | { ok: false; error: string }> {
+  const candidates = resolveCiSummaryIssueTypes(issue.issueType);
+  let lastError = 'No issue types to try';
+
+  for (const issueType of candidates) {
+    const created = await createJiraIssue(config, { ...issue, issueType }, fetchImpl);
+    if (created.ok) {
+      return { ...created, issueType };
+    }
+    lastError = created.error;
+    const retryable =
+      created.error.includes('400') ||
+      created.error.includes('issuetype') ||
+      created.error.includes('Issue type');
+    if (!retryable) break;
+  }
+
+  return { ok: false, error: lastError };
 }
