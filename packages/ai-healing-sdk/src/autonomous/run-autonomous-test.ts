@@ -8,7 +8,7 @@ import type {
   AutonomousVerificationRecord,
   MaintenanceAgentResult,
 } from 'autonomous-agent-contracts';
-import { isAssertionAction, planAutonomousGoal, replanAfterAssertionFailure } from 'autonomous-test-agent';
+import { isAssertionAction, planAutonomousGoalAsync, replanAfterAssertionFailure } from 'autonomous-test-agent';
 import { estimateAutonomousRunCostUsd, isCostWithinCap } from './cost-estimator';
 import { executeAutonomousStep } from './execute-step';
 import { getAutonomousPageState } from './get-page-state';
@@ -80,7 +80,7 @@ export async function runAutonomousTestWithMaintenance(
   const timeoutPerActionMs = options.timeoutPerActionMs ?? 8_000;
   const allowedDomains = options.allowedDomains ?? governance.allowedDomains;
 
-  const plan = planAutonomousGoal({
+  const plan = await planAutonomousGoalAsync({
     goal: resolvedGoal,
     plannerMode,
     startUrl: options.startUrl,

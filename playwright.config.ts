@@ -10,6 +10,7 @@ export default defineConfig({
     ...(process.env.RUN_TRACEABILITY === '1' ? [] : ['**/traceability/**']),
     ...(process.env.RUN_UNIT_TESTS === '1' ? [] : ['**/*.unit.spec.ts']),
     ...(process.env.RUN_AUTONOMOUS_CI === '1' ? [] : ['**/autonomous-ci-smoke.spec.ts']),
+    ...(process.env.RUN_AUTONOMOUS_LLM === '1' ? [] : ['**/autonomous-login-llm.spec.ts']),
   ],
   // Stores traces/screenshots/videos for each run.
   outputDir: 'test-results',

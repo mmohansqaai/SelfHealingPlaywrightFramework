@@ -1,0 +1,62 @@
+# Phase 12 — LLM planner spike (gated; mock LLM default, optional OpenAI/Anthropic secrets)
+name: Autonomous LLM Planner Spike
+
+on:
+  workflow_dispatch:
+    inputs:
+      llm_provider:
+        description: 'LLM provider (mock, openai, anthropic)'
+        required: true
+        default: 'mock'
+        type: choice
+        options:
+          - mock
+          - openai
+          - anthropic
+
+jobs:
+  llm-planner-spike:
+    name: LLM planner login spike
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      CI: "true"
+      RUN_AUTONOMOUS_LLM: "1"
+      BASE_URL: "https://retail-website-fawn.vercel.app"
+      AUTONOMOUS_PLANNER: "llm"
+      AUTONOMOUS_LLM_PROVIDER: ${{ github.event.inputs.llm_provider }}
+      AUTONOMOUS_LLM_FALLBACK_MOCK: "1"
+      AUTONOMOUS_LLM_API_KEY: ${{ secrets.AUTONOMOUS_LLM_API_KEY }}
+      HEALING_LLM_API_KEY: ${{ secrets.HEALING_LLM_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build workspace packages
+        run: npm run build:autonomous-agent
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run LLM planner login E2E
+        run: npm run test:autonomous-llm-login
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: autonomous-llm-planner-report
+          path: playwright-report/
+          retention-days: 7

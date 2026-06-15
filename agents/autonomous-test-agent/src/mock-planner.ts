@@ -57,7 +57,7 @@ function productsOnlyPlan(creds: { email: string; password: string }): Autonomou
 /**
  * Mock autonomous planner — deterministic plans for Nova Retail journeys (Phase 8–9).
  */
-export function planAutonomousGoal(request: AutonomousPlanRequest): AutonomousPlanResponse {
+export function planAutonomousGoalMock(request: AutonomousPlanRequest): AutonomousPlanResponse {
   const goal = request.goal.trim();
   const creds = parseLoginCredentials(goal);
 
@@ -98,3 +98,6 @@ export function planAutonomousGoal(request: AutonomousPlanRequest): AutonomousPl
     reasoning: 'Could not parse a supported goal from natural language input.',
   };
 }
+
+/** @deprecated Use planAutonomousGoalMock or planAutonomousGoalAsync */
+export const planAutonomousGoal = planAutonomousGoalMock;

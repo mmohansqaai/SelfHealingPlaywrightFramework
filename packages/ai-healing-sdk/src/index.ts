@@ -97,7 +97,19 @@ export type {
   AutonomousVerificationRecord,
   AutonomousReplanRequest,
 } from 'autonomous-agent-contracts';
-export { replanAfterAssertionFailure, isAssertionAction, NOVA_RETAIL_EVALUATION_JOURNEYS, AUTONOMOUS_CI_SMOKE_JOURNEYS, AUTONOMOUS_GOAL_TEMPLATES } from 'autonomous-test-agent';
+export {
+  replanAfterAssertionFailure,
+  isAssertionAction,
+  planAutonomousGoal,
+  planAutonomousGoalMock,
+  planAutonomousGoalAsync,
+  planAutonomousGoalWithLlm,
+  parseLlmPlanJson,
+  resolveAutonomousLlmProvider,
+  NOVA_RETAIL_EVALUATION_JOURNEYS,
+  AUTONOMOUS_CI_SMOKE_JOURNEYS,
+  AUTONOMOUS_GOAL_TEMPLATES,
+} from 'autonomous-test-agent';
 export type { EvaluationJourney } from 'autonomous-test-agent';
 
 // Phase 10 — production governance

@@ -634,7 +634,54 @@ Manual / MCP: use `formatJiraIssueFields(ticket)` for custom integrations.
 
 ---
 
-## 19. Next steps
+## 19. Phase 12 — LLM planner spike
+
+The **LLM planner** turns natural-language goals into action plans via OpenAI, Anthropic, or a **mock LLM** (no API key — reuses deterministic plan JSON for CI).
+
+### Enable locally
+
+```bash
+# Mock LLM (no API key) — same login plan shape, routed through LLM parse path
+AUTONOMOUS_PLANNER=llm AUTONOMOUS_LLM_PROVIDER=mock npm run test:autonomous-llm-login
+
+# Real OpenAI
+AUTONOMOUS_PLANNER=llm AUTONOMOUS_LLM_PROVIDER=openai \
+  AUTONOMOUS_LLM_API_KEY=sk-... npm run test:autonomous-llm-login
+```
+
+| Variable | Purpose |
+|----------|---------|
+| `AUTONOMOUS_PLANNER` | `mock` (default) or `llm` |
+| `AUTONOMOUS_LLM_PROVIDER` | `mock`, `openai`, or `anthropic` |
+| `AUTONOMOUS_LLM_API_KEY` | API key (or `HEALING_LLM_API_KEY`) |
+| `AUTONOMOUS_LLM_MODEL` | Model override (default `gpt-4o-mini` / Claude Haiku) |
+| `AUTONOMOUS_LLM_FALLBACK_MOCK` | Set to `1` to fall back to mock planner if LLM fails |
+| `RUN_AUTONOMOUS_LLM` | Required to run `autonomous-login-llm.spec.ts` |
+
+### In code
+
+```typescript
+import { runAutonomousTest } from 'ai-healing-sdk';
+
+const result = await runAutonomousTest(page, {
+  goal: 'Log in with test@demo.com / password123 and leave the login page.',
+  startUrl: '/login',
+  plannerMode: 'llm',
+  governance: { requireMockPlannerInCi: false },
+});
+// result.planner → llm-autonomous-planner-v1-mock | openai | anthropic
+```
+
+### CI
+
+- **Release gate** (`autonomous-nightly.yml`) still uses `AUTONOMOUS_PLANNER=mock` for deterministic smoke.
+- **LLM spike workflow**: `.github/workflows/autonomous-llm-spike.yml` (manual dispatch, provider choice).
+
+Service endpoint: `POST /autonomous/plan` with `{ "goal": "...", "plannerMode": "llm" }`.
+
+---
+
+## 20. Next steps
 
 1. Start with **Tier 1** in your project (`healable` + `AUTO_HEAL_DISCOVER=1`).
 2. Add **HTML report attachments** for visibility.
