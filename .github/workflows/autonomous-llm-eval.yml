@@ -1,0 +1,71 @@
+# Phase 13 — LLM evaluation harness (10 Nova Retail journeys, weekly + manual)
+name: Autonomous LLM Evaluation
+
+on:
+  schedule:
+    - cron: '0 7 * * 1'
+  workflow_dispatch:
+    inputs:
+      llm_provider:
+        description: 'LLM provider (mock, openai, anthropic)'
+        required: true
+        default: 'mock'
+        type: choice
+        options:
+          - mock
+          - openai
+          - anthropic
+
+jobs:
+  llm-evaluation:
+    name: 10-journey autonomous eval
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    env:
+      CI: "true"
+      RUN_AUTONOMOUS_EVAL: "1"
+      RUN_AUTONOMOUS_LLM: "1"
+      AUTONOMOUS_ALLOW_LLM_IN_CI: "1"
+      AUTONOMOUS_PLANNER: "llm"
+      AUTONOMOUS_LLM_PROVIDER: ${{ github.event.inputs.llm_provider || 'mock' }}
+      AUTONOMOUS_LLM_REPLAN: "1"
+      AUTONOMOUS_LLM_FALLBACK_MOCK: "1"
+      AUTONOMOUS_EVAL_MIN_COMPLETION_RATE: "0.7"
+      AUTONOMOUS_MAX_SUITE_COST_USD: "5.00"
+      AUTONOMOUS_MAX_COST_USD: "0.50"
+      BASE_URL: "https://retail-website-fawn.vercel.app"
+      AUTONOMOUS_ALLOWED_DOMAINS: "vercel.app"
+      AUTONOMOUS_LLM_API_KEY: ${{ secrets.AUTONOMOUS_LLM_API_KEY }}
+      HEALING_LLM_API_KEY: ${{ secrets.HEALING_LLM_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build workspace packages
+        run: npm run build:autonomous-agent
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run 10-journey evaluation
+        run: npm run test:autonomous-eval
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: autonomous-eval-report
+          path: playwright-report/
+          retention-days: 14

@@ -41,7 +41,9 @@ export function resolveAutonomousGovernanceFromEnv(
     allowedDomains,
     maxCostUsdPerRun: overrides.maxCostUsdPerRun ?? Number(process.env.AUTONOMOUS_MAX_COST_USD ?? 0.25),
     maxCostUsdPerSuite: overrides.maxCostUsdPerSuite ?? Number(process.env.AUTONOMOUS_MAX_SUITE_COST_USD ?? 2),
-    requireMockPlannerInCi: overrides.requireMockPlannerInCi ?? inCi,
+    requireMockPlannerInCi:
+      overrides.requireMockPlannerInCi ??
+      (inCi && process.env.AUTONOMOUS_ALLOW_LLM_IN_CI !== '1' && process.env.RUN_AUTONOMOUS_LLM !== '1' && process.env.RUN_AUTONOMOUS_EVAL !== '1'),
     humanReviewOnFailure: overrides.humanReviewOnFailure ?? true,
   };
 }

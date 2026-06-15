@@ -18,10 +18,37 @@ export type AutonomousPlannedStep = {
   reasoning: string;
 };
 
+export type AutonomousInteractiveElement = {
+  tag: string;
+  role?: string;
+  label: string;
+  inputType?: string;
+};
+
+export type AutonomousPageState = {
+  url: string;
+  title: string;
+  domElementCount?: number;
+  /** Phase 13 — compact DOM summary for LLM planner context. */
+  interactiveElements?: AutonomousInteractiveElement[];
+};
+
+export type AutonomousLlmRecoveryContext = {
+  failedStepId: string;
+  failedAction: AutonomousAction;
+  error?: string;
+  completedStepIds: string[];
+  recentTraceSummary?: string[];
+};
+
 export type AutonomousPlanRequest = {
   goal: string;
   plannerMode?: 'mock' | 'llm';
   startUrl?: string;
+  /** Phase 13 — current page snapshot for LLM planning. */
+  pageState?: AutonomousPageState;
+  planKind?: 'initial' | 'recovery';
+  recoveryContext?: AutonomousLlmRecoveryContext;
 };
 
 export type AutonomousPlanResponse = {
@@ -211,10 +238,4 @@ export type AutonomousRunResult = {
   verification: { passed: boolean; detail: string };
   reasoning: string;
   governance: AutonomousGovernanceRecord;
-};
-
-export type AutonomousPageState = {
-  url: string;
-  title: string;
-  domElementCount?: number;
 };

@@ -681,7 +681,38 @@ Service endpoint: `POST /autonomous/plan` with `{ "goal": "...", "plannerMode": 
 
 ---
 
-## 20. Next steps
+## 20. Phase 13 — Page-state LLM planning + 10-journey eval
+
+The LLM planner receives **live page state** (URL, title, visible buttons/inputs) before planning. On step failure, **LLM replan** proposes recovery steps (with rule-based fallback for assertions).
+
+### Run evaluation harness
+
+```bash
+# Mock LLM — all 10 journeys, target 100% (mock plans are deterministic)
+AUTONOMOUS_PLANNER=llm AUTONOMOUS_LLM_PROVIDER=mock npm run test:autonomous-eval
+
+# Real OpenAI — target ≥70% completion (PRD metric)
+AUTONOMOUS_PLANNER=llm AUTONOMOUS_LLM_PROVIDER=openai \
+  AUTONOMOUS_LLM_API_KEY=sk-... npm run test:autonomous-eval
+```
+
+| Variable | Purpose |
+|----------|---------|
+| `RUN_AUTONOMOUS_EVAL` | Enable `autonomous-evaluation.spec.ts` |
+| `AUTONOMOUS_ALLOW_LLM_IN_CI` | Allow LLM planner when `CI=true` |
+| `AUTONOMOUS_LLM_REPLAN` | Set to `0` to disable LLM recovery replans |
+| `AUTONOMOUS_EVAL_MIN_COMPLETION_RATE` | Pass threshold (default `0.7` for LLM, `1.0` for mock) |
+| `AUTONOMOUS_MAX_SUITE_COST_USD` | Suite cost cap for eval run |
+
+Credentials in goals sent to the LLM are **redacted** (`{{REDACTED_EMAIL}}` / `{{REDACTED_PASSWORD}}`).
+
+### CI
+
+Weekly + manual: `.github/workflows/autonomous-llm-eval.yml` — runs 10 Nova Retail journeys with LLM planner.
+
+---
+
+## 21. Next steps
 
 1. Start with **Tier 1** in your project (`healable` + `AUTO_HEAL_DISCOVER=1`).
 2. Add **HTML report attachments** for visibility.

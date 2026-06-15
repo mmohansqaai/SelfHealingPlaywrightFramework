@@ -8,10 +8,10 @@ import type {
   AutonomousVerificationRecord,
   MaintenanceAgentResult,
 } from 'autonomous-agent-contracts';
-import { isAssertionAction, planAutonomousGoalAsync, replanAfterAssertionFailure } from 'autonomous-test-agent';
+import { isAssertionAction, planAutonomousGoalAsync, planLlmRecoverySteps, replanAfterAssertionFailure } from 'autonomous-test-agent';
 import { estimateAutonomousRunCostUsd, isCostWithinCap } from './cost-estimator';
 import { executeAutonomousStep } from './execute-step';
-import { getAutonomousPageState } from './get-page-state';
+import { getAutonomousPageState, getAutonomousPageStateForPlanner } from './get-page-state';
 import {
   assertPlannerAllowedForCi,
   injectSecretsIntoGoal,
@@ -19,6 +19,7 @@ import {
   resolveAutonomousGovernanceFromEnv,
   resolveAutonomousSecretsFromEnv,
 } from './governance';
+import { redactSecretsInText } from './redact-secrets';
 import { runMaintenanceAgent } from '../maintenance/maintenance-agent';
 import { assertDomainAllowed } from './strategies-for-hint';
 import { runVerificationAgent, summarizeVerifications } from './verification-agent';
@@ -80,10 +81,24 @@ export async function runAutonomousTestWithMaintenance(
   const timeoutPerActionMs = options.timeoutPerActionMs ?? 8_000;
   const allowedDomains = options.allowedDomains ?? governance.allowedDomains;
 
+  if (options.startUrl) {
+    await page.goto(options.startUrl, { waitUntil: 'domcontentloaded' });
+    assertDomainAllowed(page, allowedDomains);
+  }
+
+  const pageStateForPlan =
+    plannerMode === 'llm'
+      ? await getAutonomousPageStateForPlanner(page).catch(() => ({
+          url: page.url(),
+          title: '',
+        }))
+      : undefined;
+
   const plan = await planAutonomousGoalAsync({
-    goal: resolvedGoal,
+    goal: redactSecretsInText(resolvedGoal, secrets),
     plannerMode,
     startUrl: options.startUrl,
+    pageState: pageStateForPlan,
   });
 
   const trace: AutonomousStepTrace[] = [];
@@ -95,11 +110,6 @@ export async function runAutonomousTestWithMaintenance(
   let verificationDetail = 'Not verified';
 
   const queue: AutonomousPlannedStep[] = [...plan.steps];
-
-  if (options.startUrl) {
-    await page.goto(options.startUrl, { waitUntil: 'domcontentloaded' });
-    assertDomainAllowed(page, allowedDomains);
-  }
 
   let stepCounter = 0;
 
@@ -175,14 +185,38 @@ export async function runAutonomousTestWithMaintenance(
       continue;
     }
 
-    if (isAssertionAction(step.action) && replanCount < maxReplans) {
-      const recovery = replanAfterAssertionFailure({
-        goal: resolvedGoal,
-        failedStepId: step.id,
-        failedAction: step.action,
-        pageUrl: page.url(),
-        completedStepIds,
-      });
+    if (!exec.ok && replanCount < maxReplans) {
+      let recovery: AutonomousPlannedStep[] = [];
+
+      if (plannerMode === 'llm' && process.env.AUTONOMOUS_LLM_REPLAN !== '0') {
+        const pageStateForRecovery = await getAutonomousPageStateForPlanner(page).catch(() => ({
+          url: page.url(),
+          title: '',
+        }));
+        const llmRecovery = await planLlmRecoverySteps({
+          goal: redactSecretsInText(resolvedGoal, secrets),
+          plannerMode: 'llm',
+          startUrl: options.startUrl,
+          pageState: pageStateForRecovery,
+          planKind: 'recovery',
+          recoveryContext: {
+            failedStepId: step.id,
+            failedAction: step.action,
+            error: exec.error,
+            completedStepIds,
+            recentTraceSummary: trace.slice(-6).map((t) => `${t.stepId} (${t.action.type}): ${t.ok ? 'ok' : t.error ?? 'fail'}`),
+          },
+        });
+        recovery = llmRecovery.steps;
+      } else if (isAssertionAction(step.action)) {
+        recovery = replanAfterAssertionFailure({
+          goal: resolvedGoal,
+          failedStepId: step.id,
+          failedAction: step.action,
+          pageUrl: page.url(),
+          completedStepIds,
+        });
+      }
 
       if (recovery.length > 0) {
         queue.unshift(...recovery);

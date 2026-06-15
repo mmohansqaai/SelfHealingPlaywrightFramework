@@ -1,6 +1,7 @@
 import type { AutonomousPlanRequest } from 'autonomous-agent-contracts';
-import { buildAutonomousPlannerUserPrompt, getAutonomousPlannerSystemPrompt } from './llm-planner-prompt';
+import { resolvePlannerPrompts } from './llm-planner-prompt';
 import { planAutonomousGoalMock } from './mock-planner';
+import { replanAfterAssertionFailure, isAssertionAction } from './replan';
 
 export type AutonomousLlmProvider = 'mock' | 'openai' | 'anthropic';
 
@@ -27,6 +28,37 @@ export async function callAutonomousLlmPlanner(
   const provider = resolveAutonomousLlmProvider();
 
   if (provider === 'mock') {
+    if (request.planKind === 'recovery' && request.recoveryContext) {
+      const ctx = request.recoveryContext;
+      let steps = isAssertionAction(ctx.failedAction)
+        ? replanAfterAssertionFailure({
+            goal: request.goal,
+            failedStepId: ctx.failedStepId,
+            failedAction: ctx.failedAction,
+            pageUrl: request.pageState?.url ?? '',
+            completedStepIds: ctx.completedStepIds,
+          })
+        : [
+            {
+              id: 'llm-replan-wait',
+              action: { type: 'wait' as const, ms: 500 },
+              reasoning: 'Mock LLM recovery: wait for UI to settle.',
+            },
+            {
+              id: 'llm-replan-retry',
+              action: ctx.failedAction,
+              reasoning: 'Mock LLM recovery: retry failed action.',
+            },
+          ];
+      return {
+        content: JSON.stringify({
+          reasoning: 'Mock LLM recovery plan',
+          steps,
+        }),
+        model: 'mock-autonomous-llm-v1',
+        provider: 'mock',
+      };
+    }
     const mock = planAutonomousGoalMock(request);
     return {
       content: JSON.stringify({ reasoning: mock.reasoning, steps: mock.steps }),
@@ -59,6 +91,7 @@ async function callOpenAiPlanner(
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
+    const { system, user } = resolvePlannerPrompts(request);
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -71,8 +104,8 @@ async function callOpenAiPlanner(
         max_tokens: Number(process.env.AUTONOMOUS_LLM_MAX_TOKENS ?? 2500),
         response_format: { type: 'json_object' },
         messages: [
-          { role: 'system', content: getAutonomousPlannerSystemPrompt() },
-          { role: 'user', content: buildAutonomousPlannerUserPrompt(request) },
+          { role: 'system', content: system },
+          { role: 'user', content: user },
         ],
       }),
       signal: controller.signal,
@@ -108,6 +141,7 @@ async function callAnthropicPlanner(
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
+    const { system, user } = resolvePlannerPrompts(request);
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -119,8 +153,8 @@ async function callAnthropicPlanner(
         model,
         max_tokens: Number(process.env.AUTONOMOUS_LLM_MAX_TOKENS ?? 2500),
         temperature: 0,
-        system: getAutonomousPlannerSystemPrompt(),
-        messages: [{ role: 'user', content: buildAutonomousPlannerUserPrompt(request) }],
+        system,
+        messages: [{ role: 'user', content: user }],
       }),
       signal: controller.signal,
     });

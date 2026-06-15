@@ -104,7 +104,9 @@ export {
   planAutonomousGoalMock,
   planAutonomousGoalAsync,
   planAutonomousGoalWithLlm,
+  planLlmRecoverySteps,
   parseLlmPlanJson,
+  toEvaluationJourneyDefinitions,
   resolveAutonomousLlmProvider,
   NOVA_RETAIL_EVALUATION_JOURNEYS,
   AUTONOMOUS_CI_SMOKE_JOURNEYS,
@@ -114,6 +116,13 @@ export type { EvaluationJourney } from 'autonomous-test-agent';
 
 // Phase 10 — production governance
 export { runAutonomousSuite } from './autonomous/suite-runner';
+export {
+  runAutonomousEvaluation,
+  formatAutonomousEvaluationBody,
+} from './autonomous/evaluation-runner';
+export type { AutonomousEvaluationResult, AutonomousEvaluationKpis, RunAutonomousEvaluationOptions } from './autonomous/evaluation-runner';
+export { getAutonomousPageStateForPlanner } from './autonomous/get-page-state';
+export { redactSecretsInText } from './autonomous/redact-secrets';
 export type { RunAutonomousSuiteOptions } from './autonomous/suite-runner';
 export {
   resolveAutonomousSecretsFromEnv,

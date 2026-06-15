@@ -85,6 +85,17 @@ export const NOVA_RETAIL_EVALUATION_JOURNEYS = [
 
 export type EvaluationJourney = (typeof NOVA_RETAIL_EVALUATION_JOURNEYS)[number];
 
+/** Convert evaluation set to runnable journey definitions (Phase 13). */
+export function toEvaluationJourneyDefinitions(): AutonomousJourneyDefinition[] {
+  return NOVA_RETAIL_EVALUATION_JOURNEYS.map((j) => ({
+    id: j.id,
+    goal: j.goal,
+    startUrl: j.startUrl,
+    maxSteps: 30,
+    timeoutPerActionMs: 25_000,
+  }));
+}
+
 /** Phase 10 — CI smoke subset with env-injected credentials (no secrets in repo). */
 export const AUTONOMOUS_CI_SMOKE_JOURNEYS: AutonomousJourneyDefinition[] = [
   {

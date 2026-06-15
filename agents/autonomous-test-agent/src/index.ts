@@ -8,13 +8,25 @@ export {
 export { planAutonomousGoal, planAutonomousGoalMock } from './mock-planner';
 export { planAutonomousGoalAsync } from './plan-router';
 export { planAutonomousGoalWithLlm } from './llm-planner';
+export { planLlmRecoverySteps } from './llm-replan';
 export { parseLlmPlanJson } from './parse-llm-plan';
+export { formatPageStateForPrompt } from './page-state-format';
+export { redactSecretsInGoalText } from './redact-secrets';
 export {
   callAutonomousLlmPlanner,
   resolveAutonomousLlmProvider,
   resolveAutonomousLlmApiKey,
 } from './llm-planner-client';
-export { getAutonomousPlannerSystemPrompt, buildAutonomousPlannerUserPrompt } from './llm-planner-prompt';
+export {
+  getAutonomousPlannerSystemPrompt,
+  buildAutonomousPlannerUserPrompt,
+  resolvePlannerPrompts,
+} from './llm-planner-prompt';
 export { replanAfterAssertionFailure, isAssertionAction } from './replan';
-export { NOVA_RETAIL_EVALUATION_JOURNEYS, AUTONOMOUS_CI_SMOKE_JOURNEYS, AUTONOMOUS_GOAL_TEMPLATES } from './evaluation-journeys';
+export {
+  NOVA_RETAIL_EVALUATION_JOURNEYS,
+  toEvaluationJourneyDefinitions,
+  AUTONOMOUS_CI_SMOKE_JOURNEYS,
+  AUTONOMOUS_GOAL_TEMPLATES,
+} from './evaluation-journeys';
 export type { EvaluationJourney } from './evaluation-journeys';
