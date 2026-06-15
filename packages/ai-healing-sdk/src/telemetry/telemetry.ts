@@ -1,3 +1,4 @@
+import type { AgentTrace } from '../transport/contracts';
 import type { HealingResult } from '../core/healing-types';
 
 export type TelemetryEvent =
@@ -5,7 +6,11 @@ export type TelemetryEvent =
   | { type: 'healing.static_success'; strategy: string }
   | { type: 'healing.auto_heal_success'; strategy: string; score?: number }
   | { type: 'healing.failure'; attempts: number }
-  | { type: 'healing.complete'; result: HealingResult<unknown> };
+  | { type: 'healing.complete'; result: HealingResult<unknown> }
+  | { type: 'agent.iteration_start'; iteration: number; maxIterations: number }
+  | { type: 'agent.no_candidates'; iteration: number }
+  | { type: 'agent.iteration_reflect'; iteration: number; failedCount: number }
+  | { type: 'agent.heal_success'; iteration: number; strategy: string; traces: AgentTrace[] };
 
 type TelemetryListener = (event: TelemetryEvent) => void;
 

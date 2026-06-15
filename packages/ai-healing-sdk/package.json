@@ -1,7 +1,7 @@
 {
   "name": "ai-healing-sdk",
-  "version": "0.2.0",
-  "description": "Plug-and-play self-healing SDK for Playwright automation",
+  "version": "0.3.0",
+  "description": "Plug-and-play agentic self-healing SDK for Playwright automation",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

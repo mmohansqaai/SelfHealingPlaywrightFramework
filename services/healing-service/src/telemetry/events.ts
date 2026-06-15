@@ -1,7 +1,7 @@
 import type { HealingRequest, HealingResponse } from 'ai-healing-sdk';
 
 export type HealingServiceEvent =
-  | { type: 'heal.request'; url: string; action: string; framework: string }
+  | { type: 'heal.request'; url: string; action: string; framework: string; agentMode?: string; iteration?: number }
   | { type: 'heal.response'; status: string; candidateCount: number; durationMs: number }
   | { type: 'heal.cache_hit'; url: string }
   | { type: 'heal.error'; message: string };

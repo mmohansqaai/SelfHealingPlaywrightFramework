@@ -5,9 +5,15 @@ import { envTruthy } from './env';
 
 export type DomSnapshotMode = 'full' | 'minimal' | 'off';
 
+export type HealingAgentMode = 'agentic' | 'legacy' | 'off';
+
 /** Phase 1 SDK configuration (maps to existing healing engine options). */
 export type HealingSdkConfig = {
   healingEnabled: boolean;
+  /** Pure agentic loop when enabled; legacy uses direct discoverer. */
+  agentMode: HealingAgentMode;
+  maxAgentIterations: number;
+  healingServiceUrl?: string;
   maxRetries: number;
   confidenceThreshold: number;
   screenshotOnFailure: boolean;
@@ -21,8 +27,18 @@ export type HealingSdkConfig = {
 
 const DEFAULT_MIN_CONFIDENCE = 0.7;
 
+function resolveAgentModeFromEnv(): HealingAgentMode {
+  const raw = (process.env.HEALING_AGENT_MODE ?? 'agentic').toLowerCase();
+  if (raw === 'off' || raw === 'legacy' || raw === 'agentic') return raw;
+  if (raw === 'hybrid' || raw === 'llm_only' || raw === 'llm') return 'agentic';
+  return 'agentic';
+}
+
 export const DEFAULT_HEALING_SDK_CONFIG: HealingSdkConfig = {
   healingEnabled: envTruthy(process.env.AUTO_HEAL_DISCOVER),
+  agentMode: resolveAgentModeFromEnv(),
+  maxAgentIterations: Number(process.env.HEALING_AGENT_MAX_ITERATIONS || 3),
+  healingServiceUrl: process.env.HEALING_SERVICE_URL?.replace(/\/$/, ''),
   maxRetries: 3,
   confidenceThreshold: Number(process.env.AUTO_HEAL_MIN_CONFIDENCE)
     ? Number(process.env.AUTO_HEAL_MIN_CONFIDENCE) / 100
@@ -41,6 +57,9 @@ export function resolveHealingSdkConfig(partial?: Partial<HealingSdkConfig>): He
 
 export type AutoHealEngineOptions = {
   enabled?: boolean;
+  agentMode?: HealingAgentMode;
+  maxAgentIterations?: number;
+  healingServiceUrl?: string;
   discoverOnly?: boolean;
   minConfidence?: number;
   persistTarget?: { filePath: string; methodName: string };
@@ -52,6 +71,8 @@ export type AutoHealEngineOptions = {
 export type HealingEngineOptions = {
   timeoutPerStrategyMs?: number;
   actionType?: HealingActionType;
+  telemetryEnabled?: boolean;
+  verboseLogs?: boolean;
   autoHeal?: AutoHealEngineOptions;
 };
 
@@ -67,9 +88,14 @@ export function sdkConfigToEngineOptions(
 
   return {
     timeoutPerStrategyMs: config.timeoutPerStrategyMs,
+    telemetryEnabled: config.telemetryEnabled,
+    verboseLogs: config.verboseLogs,
     ...overrides,
     autoHeal: {
       enabled: config.healingEnabled,
+      agentMode: config.agentMode,
+      maxAgentIterations: config.maxAgentIterations,
+      healingServiceUrl: config.healingServiceUrl,
       discoverOnly: !config.persistenceEnabled,
       minConfidence: Math.round(config.confidenceThreshold * 100),
       validationPasses: 2,

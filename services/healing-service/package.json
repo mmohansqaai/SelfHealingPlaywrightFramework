@@ -12,6 +12,8 @@
   "dependencies": {
     "ai-healing-sdk": "file:../../packages/ai-healing-sdk",
     "express": "^4.21.2",
+    "llm-locator-agent": "file:../../agents/llm-locator-agent",
+    "llm-provider": "file:../../packages/llm-provider",
     "locator-agent": "file:../../agents/locator-agent"
   },
   "devDependencies": {

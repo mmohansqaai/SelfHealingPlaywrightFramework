@@ -1,9 +1,8 @@
 import type { Page } from '@playwright/test';
-import { scanDomElements } from '../core/discovery/dom-scan-discovery';
-import { failureHints } from '../core/discovery/intent-hints';
 import type { GeneratedLocatorCandidate, HealingAttempt, HealingActionType } from '../core/healing-types';
 import type { DiscovererFn } from './local-transport';
 import type { HealingRequest, HealingResponse } from './contracts';
+import { buildHealingRequest } from '../agent/build-healing-request';
 
 export type HttpTransportOptions = {
   baseUrl: string;
@@ -16,35 +15,6 @@ export type HttpTransportOptions = {
 
 function resolveServiceUrl(): string | undefined {
   return process.env.HEALING_SERVICE_URL?.replace(/\/$/, '');
-}
-
-async function buildHealingRequest(
-  page: Page,
-  actionType: HealingActionType,
-  attempts: HealingAttempt[],
-  framework: HealingRequest['framework']
-): Promise<HealingRequest> {
-  const domSnapshot = await scanDomElements(page, actionType);
-  const hints = failureHints(attempts);
-  const lastFailed = [...attempts].reverse().find((a) => !a.ok);
-
-  let pageTitle: string | undefined;
-  try {
-    pageTitle = await page.title();
-  } catch {
-    pageTitle = undefined;
-  }
-
-  return {
-    framework,
-    action: actionType,
-    failedLocator: lastFailed?.strategy ?? 'unknown',
-    error: lastFailed?.error ?? 'unknown failure',
-    url: page.url(),
-    pageTitle,
-    domSnapshot,
-    failureHints: hints,
-  };
 }
 
 async function postHealRequest(baseUrl: string, body: HealingRequest, timeoutMs: number): Promise<HealingResponse> {
@@ -79,7 +49,7 @@ function mapResponseToCandidates(response: HealingResponse): GeneratedLocatorCan
     strategyName: c.strategy,
     query: c.query,
     score: c.score,
-    reason: `[healing-service] ${c.reasoning}`,
+    reason: `[agentic-service] ${c.reasoning}`,
   }));
 }
 
@@ -90,7 +60,10 @@ export function createHttpDiscoverer(options: HttpTransportOptions): DiscovererF
   const framework = options.framework ?? 'playwright';
 
   return async ({ page, actionType, attempts }) => {
-    const request = await buildHealingRequest(page, actionType, attempts, framework);
+    const request = await buildHealingRequest(page, actionType, attempts, {
+      framework,
+      agentContext: { iteration: 0, maxIterations: 3, agentMode: 'agentic' },
+    });
 
     try {
       const response = await postHealRequest(baseUrl, request, timeoutMs);

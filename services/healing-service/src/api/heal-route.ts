@@ -14,7 +14,7 @@ function isHealingRequest(body: unknown): body is HealingRequest {
   );
 }
 
-export function postHeal(req: Request, res: Response): void {
+export async function postHeal(req: Request, res: Response): Promise<void> {
   if (!isHealingRequest(req.body)) {
     res.status(400).json({
       status: 'error',
@@ -24,7 +24,7 @@ export function postHeal(req: Request, res: Response): void {
   }
 
   try {
-    const response = orchestrateHealing(req.body);
+    const response = await orchestrateHealing(req.body);
     res.status(200).json(response);
   } catch (error) {
     res.status(500).json({

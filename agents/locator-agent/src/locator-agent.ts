@@ -1,6 +1,9 @@
 import type { HealingRequest } from 'ai-healing-sdk';
+import { formatLocatorQuery } from 'ai-healing-sdk';
 import { mergeLocatorCandidates } from './merge/candidate-merger';
 import { pickBestScoredCandidate, scoreCandidates } from './scoring/confidence-scorer';
+import { runAccessibilityRecoveryStrategy } from './strategies/accessibility-recovery';
+import { runAttributeSimilarityStrategy } from './strategies/attribute-similarity';
 import { runDomNeighborhoodStrategy } from './strategies/dom-neighborhood';
 import { applyHistoricalLearningBoost } from './strategies/historical-learning';
 import { runSemanticMatchingStrategy } from './strategies/semantic-matching';
@@ -18,16 +21,23 @@ export function buildLocatorAgentContext(request: HealingRequest): LocatorAgentC
 }
 
 /**
- * Locator Agent — orchestrates modular healing strategies and confidence scoring.
- * Candidate pool matches Phase 2 (semantic seed + DOM scan merge) when history is absent.
+ * Locator Agent — pure agentic orchestration via modular tools and confidence scoring.
  */
 export function runLocatorAgent(request: HealingRequest): LocatorAgentResult {
   const ctx = buildLocatorAgentContext(request);
+  const failedLocators = new Set(
+    (request.agentContext?.priorValidationResults ?? [])
+      .filter((r) => !r.ok)
+      .map((r) => r.healedLocator)
+  );
 
   const merged = mergeLocatorCandidates([
     ...runSemanticMatchingStrategy(ctx),
     ...runDomNeighborhoodStrategy(ctx),
-  ]);
+    ...runAttributeSimilarityStrategy(ctx),
+    ...runAccessibilityRecoveryStrategy(ctx),
+  ]).filter((c) => !failedLocators.has(formatLocatorQuery(c.query)));
+
   const withHistory = applyHistoricalLearningBoost(ctx, merged);
   const scored = scoreCandidates(withHistory);
   const best = pickBestScoredCandidate(scored);

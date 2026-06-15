@@ -4,6 +4,8 @@
 
 Self-healing Playwright tests for the Nova Retail login page: `https://retail-website-two.vercel.app/login`.
 
+**How to use:** see [docs/How-To-Use-Agentic-Healing.md](docs/How-To-Use-Agentic-Healing.md) for step-by-step setup (SDK, service, LLM).
+
 ## Purpose
 
 - **Reduce flaky failures from locator changes** by trying multiple locator strategies (fallbacks) for the same element.

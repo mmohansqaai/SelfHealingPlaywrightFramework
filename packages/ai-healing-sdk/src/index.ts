@@ -8,6 +8,7 @@ export type {
   HealingEngineOptions,
   AutoHealEngineOptions,
   DomSnapshotMode,
+  HealingAgentMode,
 } from './utils/config';
 export { DEFAULT_HEALING_SDK_CONFIG, resolveHealingSdkConfig, sdkConfigToEngineOptions } from './utils/config';
 
@@ -54,9 +55,20 @@ export type {
   HealingRequest,
   HealingResponse,
   HealingResponseCandidate,
+  AgentHealContext,
+  AgentTrace,
+  AgentValidationResult,
+  AgentToolCall,
 } from './transport/contracts';
 export { formatLocatorQuery, confidenceFromScore } from './transport/contracts';
 export { discoverSeedCandidatesOffline } from './core/locator-recovery/offline-seed-discovery';
+
+// Agentic healing (pure agent loop)
+export { runAgenticHealingLoop, createAgentDiscoverer, resolveAgentDiscoverer } from './agent/agent-loop';
+export type { AgentLoopOptions } from './agent/agent-loop';
+export { runAgentEngine } from './agent/agent-engine';
+export { buildHealingRequest } from './agent/build-healing-request';
+export { searchDom, listHeuristicCandidates, listHeuristicCandidatesOffline } from './agent/tools';
 
 // Telemetry
 export { emitTelemetry, onTelemetry } from './telemetry/telemetry';

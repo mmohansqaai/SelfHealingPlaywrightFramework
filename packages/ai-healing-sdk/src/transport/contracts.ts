@@ -1,6 +1,38 @@
 import type { DomElementSnapshot } from '../core/discovery/dom-scan-discovery';
 import type { GeneratedLocatorQuery, HealingActionType } from '../core/healing-types';
 
+export type AgentValidationResult = {
+  healedLocator: string;
+  ok: boolean;
+  error?: string;
+};
+
+export type AgentHealContext = {
+  iteration: number;
+  maxIterations: number;
+  priorCandidates?: HealingResponseCandidate[];
+  priorValidationResults?: AgentValidationResult[];
+  testStepDescription?: string;
+  agentMode?: 'agentic' | 'legacy';
+};
+
+export type AgentToolCall = {
+  name: string;
+  input?: Record<string, unknown>;
+  outputSummary: string;
+};
+
+export type AgentTrace = {
+  agentId: string;
+  iteration: number;
+  model?: string;
+  promptTokens?: number;
+  completionTokens?: number;
+  toolCalls?: AgentToolCall[];
+  reasoning?: string;
+  latencyMs: number;
+};
+
 /** Standardized healing request (SDK → healing-service). */
 export type HealingRequest = {
   framework: 'playwright' | 'cypress' | 'selenium' | 'webdriverio' | string;
@@ -14,6 +46,8 @@ export type HealingRequest = {
   domSnapshot?: DomElementSnapshot[];
   /** Combined failure hints from prior strategy attempts. */
   failureHints?: string;
+  /** Agent loop context for observe–reason–act–reflect cycles. */
+  agentContext?: AgentHealContext;
   metadata?: Record<string, unknown>;
 };
 
@@ -35,6 +69,7 @@ export type HealingResponse = {
   strategy?: string;
   reasoning?: string;
   candidates?: HealingResponseCandidate[];
+  agentTrace?: AgentTrace[];
   error?: string;
 };
 

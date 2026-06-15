@@ -16,6 +16,7 @@ test.describe('ai-healing-sdk plug-and-play @plug-and-play', () => {
   test.beforeEach(async ({ page }) => {
     enableHealing(page, {
       healingEnabled: true,
+      agentMode: 'agentic',
       persistenceEnabled: false,
       confidenceThreshold: 0.7,
       verboseLogs: true,
