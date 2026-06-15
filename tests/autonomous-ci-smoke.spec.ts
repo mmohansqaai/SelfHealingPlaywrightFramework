@@ -5,10 +5,13 @@ import {
   attachAutonomousTrace,
   AUTONOMOUS_CI_SMOKE_JOURNEYS,
   enableHealing,
+  publishAutonomousCiSummaryToJira,
+  resolveGithubActionsRunUrl,
   runAutonomousSuite,
   runMaintenanceAgentAsync,
   writeAutonomousReviewArtifact,
 } from 'ai-healing-sdk';
+import type { MaintenanceAgentResult } from 'autonomous-agent-contracts';
 
 test.describe('Phase 10 autonomous CI smoke @autonomous-ci-smoke', () => {
   test('governed suite — login + checkout with env secrets and KPI rollup', async ({ page }, testInfo) => {
@@ -32,6 +35,8 @@ test.describe('Phase 10 autonomous CI smoke @autonomous-ci-smoke', () => {
 
     await attachAutonomousSuiteKpis(testInfo, suite.kpis);
 
+    const maintenanceResults: MaintenanceAgentResult[] = [];
+
     for (const result of suite.results) {
       await attachAutonomousTrace(testInfo, result);
       if (result.governance.needsHumanReview) {
@@ -41,13 +46,32 @@ test.describe('Phase 10 autonomous CI smoke @autonomous-ci-smoke', () => {
       if (process.env.MAINTENANCE_AGENT === '1') {
         const maintenance = await runMaintenanceAgentAsync(result, {
           outputDir: 'maintenance-output',
+          ticketProvider: (process.env.MAINTENANCE_TICKET_PROVIDER as 'jira' | 'mock' | 'linear') ?? 'jira',
           publishTicketsLive: process.env.MAINTENANCE_PUBLISH_JIRA === '1',
         });
+        maintenanceResults.push(maintenance);
         if (maintenance.publishResults?.length) {
           await testInfo.attach('maintenance-jira-publish', {
             body: JSON.stringify(maintenance.publishResults, null, 2),
             contentType: 'application/json',
           });
+        }
+      }
+    }
+
+    if (process.env.MAINTENANCE_PUBLISH_JIRA === '1') {
+      const ciSummary = await publishAutonomousCiSummaryToJira(suite, maintenanceResults, {
+        runUrl: resolveGithubActionsRunUrl(),
+        sha: process.env.GITHUB_SHA,
+        runId: process.env.GITHUB_RUN_ID,
+      });
+      if (ciSummary) {
+        await testInfo.attach('maintenance-jira-ci-summary', {
+          body: JSON.stringify(ciSummary, null, 2),
+          contentType: 'application/json',
+        });
+        if (!ciSummary.published && ciSummary.error) {
+          console.warn('[maintenance] Jira CI summary not published:', ciSummary.error);
         }
       }
     }

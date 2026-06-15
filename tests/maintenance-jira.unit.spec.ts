@@ -1,12 +1,15 @@
 import { test, expect } from '@playwright/test';
 import {
+  buildCiRunSummaryDescription,
   buildJiraCreateIssueBody,
   buildMaintenanceTicket,
+  isCiSummaryPublishEnabled,
   isJiraPublishEnabled,
   maintenanceDescriptionToAdf,
   publishMaintenanceTicketsToJira,
   resolveJiraConfigFromEnv,
 } from 'ai-healing-sdk';
+import type { AutonomousSuiteResult } from 'autonomous-agent-contracts';
 
 test.describe('Jira maintenance publish unit', () => {
   test('resolveJiraConfigFromEnv reads standard env vars', () => {
@@ -63,15 +66,42 @@ test.describe('Jira maintenance publish unit', () => {
     expect(results).toEqual([]);
   });
 
-  test('isJiraPublishEnabled respects explicit false flag', () => {
+  test('isCiSummaryPublishEnabled defaults on in CI when Jira configured', () => {
+    process.env.CI = 'true';
+    process.env.MAINTENANCE_PUBLISH_JIRA = '1';
     process.env.JIRA_BASE_URL = 'https://example.atlassian.net';
     process.env.JIRA_EMAIL = 'bot@example.com';
     process.env.JIRA_API_TOKEN = 'token';
     process.env.JIRA_PROJECT_KEY = 'QA';
-    expect(isJiraPublishEnabled({ publishTicketsLive: false })).toBe(false);
+    expect(isCiSummaryPublishEnabled()).toBe(true);
+    delete process.env.CI;
+    delete process.env.MAINTENANCE_PUBLISH_JIRA;
     delete process.env.JIRA_BASE_URL;
     delete process.env.JIRA_EMAIL;
     delete process.env.JIRA_API_TOKEN;
     delete process.env.JIRA_PROJECT_KEY;
+  });
+
+  test('buildCiRunSummaryDescription includes KPI block', () => {
+    const suite: AutonomousSuiteResult = {
+      suiteCostCapExceeded: false,
+      kpis: {
+        journeyCount: 2,
+        completedCount: 2,
+        failedCount: 0,
+        goalCompletionRate: 1,
+        avgStepsExecuted: 8,
+        avgReplans: 0,
+        totalEstimatedCostUsd: 0.01,
+        avgEstimatedCostUsd: 0.005,
+        needsHumanReviewCount: 0,
+        failedJourneyIds: [],
+      },
+      results: [],
+    };
+    const body = buildCiRunSummaryDescription(suite, [], { sha: 'abc123' });
+    expect(body).toContain('PASS');
+    expect(body).toContain('Goal completion rate');
+    expect(body).toContain('abc123');
   });
 });

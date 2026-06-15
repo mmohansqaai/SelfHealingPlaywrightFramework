@@ -579,6 +579,8 @@ MAINTENANCE_AGENT=1 npm run test:autonomous-ci-smoke
 | `MAINTENANCE_TICKET_PROVIDER` | `mock`, `jira`, or `linear` |
 | `MAINTENANCE_PROPOSE_PERSIST` | Set to `0` to skip locator proposals |
 | `MAINTENANCE_PUBLISH_JIRA` | Set to `1` to create Jira issues via REST API (requires `JIRA_*` below) |
+| `MAINTENANCE_PUBLISH_CI_SUMMARY` | Set to `1` to post a **Task** per CI run with suite KPIs (default on when `MAINTENANCE_PUBLISH_JIRA=1` in CI) |
+| `JIRA_CI_SUMMARY_ISSUE_TYPE` | Issue type for CI summaries (default `Task`; maintenance bugs use `Bug`) |
 | `JIRA_BASE_URL` | Jira Cloud site URL (e.g. `https://yourteam.atlassian.net`) |
 | `JIRA_EMAIL` | Atlassian account email for API token auth |
 | `JIRA_API_TOKEN` | [API token](https://id.atlassian.com/manage-profile/security/api-tokens) |
@@ -610,7 +612,12 @@ applyMaintenanceProposal('maintenance-output/patches/prop-fill-email-123.json');
 
 ### Live Jira publish
 
-When `MAINTENANCE_PUBLISH_JIRA=1` and `JIRA_*` credentials are set, the SDK calls Jira Cloud REST API v3 and dedupes by failure ID (`.maintenance-jira-published.json`).
+**Two Jira behaviors:**
+
+1. **CI run summary (Task)** — created every nightly run when `MAINTENANCE_PUBLISH_JIRA=1` and secrets are set. Look for `[Autonomous QA] CI PASS — …` in Jira.
+2. **Maintenance bug tickets (Bug)** — only when the **same step fails repeatedly** (≥ `MAINTENANCE_TICKET_THRESHOLD`, default 3). A single green CI run creates **zero** bug tickets.
+
+When `MAINTENANCE_PUBLISH_JIRA=1` and `JIRA_*` credentials are set, the SDK calls Jira Cloud REST API v3 and dedupes maintenance bugs by failure ID (`.maintenance-jira-published.json`). Persist `.maintenance-failures.json` between CI runs (GitHub Actions cache) so failure counts accumulate across nights.
 
 ```bash
 # After a smoke run with repeated failures:

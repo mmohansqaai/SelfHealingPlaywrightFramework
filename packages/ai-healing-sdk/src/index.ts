@@ -145,9 +145,16 @@ export {
 export {
   resolveJiraConfigFromEnv,
   isJiraPublishEnabled,
+  createJiraIssue,
   createJiraIssueFromTicket,
   buildJiraCreateIssueBody,
   maintenanceDescriptionToAdf,
 } from './maintenance/jira-client';
+export {
+  publishAutonomousCiSummaryToJira,
+  buildCiRunSummaryDescription,
+  isCiSummaryPublishEnabled,
+  resolveGithubActionsRunUrl,
+} from './maintenance/jira-ci-summary';
 export type { JiraClientConfig } from './maintenance/jira-client';
 export { NOVA_RETAIL_LOCATOR_TARGETS, resolveLocatorTarget, toHealingSnapshot, snapshotToCandidate } from './maintenance/locator-target-map';

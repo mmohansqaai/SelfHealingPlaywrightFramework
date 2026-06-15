@@ -24,6 +24,8 @@ jobs:
       AUTONOMOUS_PLANNER: "mock"
       MAINTENANCE_AGENT: "1"
       MAINTENANCE_TICKET_THRESHOLD: "3"
+      MAINTENANCE_TICKET_PROVIDER: "jira"
+      MAINTENANCE_PUBLISH_CI_SUMMARY: "1"
       # Live Jira — add repository secrets: JIRA_BASE_URL, JIRA_EMAIL, JIRA_API_TOKEN, JIRA_PROJECT_KEY
       MAINTENANCE_PUBLISH_JIRA: "1"
       JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
@@ -40,6 +42,16 @@ jobs:
         with:
           node-version: 20
           cache: npm
+
+      - name: Restore maintenance failure store
+        uses: actions/cache@v4
+        with:
+          path: |
+            .maintenance-failures.json
+            .maintenance-jira-published.json
+          key: maintenance-store-${{ github.repository }}
+          restore-keys: |
+            maintenance-store-${{ github.repository }}
 
       - name: Install dependencies
         run: npm ci

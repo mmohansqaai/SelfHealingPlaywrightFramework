@@ -74,13 +74,21 @@ function basicAuthHeader(email: string, apiToken: string): string {
   return `Basic ${Buffer.from(`${email}:${apiToken}`).toString('base64')}`;
 }
 
-export async function createJiraIssueFromTicket(
+export async function createJiraIssue(
   config: JiraClientConfig,
-  ticket: MaintenanceTicketPayload,
+  issue: { summary: string; description: string; issueType?: string; labels?: string[] },
   fetchImpl: typeof fetch = fetch
 ): Promise<{ ok: true; issueKey: string; issueUrl: string } | { ok: false; error: string }> {
   const url = `${config.baseUrl}/rest/api/3/issue`;
-  const body = buildJiraCreateIssueBody(config, ticket);
+  const body = {
+    fields: {
+      project: { key: config.projectKey },
+      issuetype: { name: issue.issueType ?? config.issueType ?? 'Bug' },
+      summary: issue.summary.slice(0, 255),
+      description: maintenanceDescriptionToAdf(issue.description),
+      labels: (issue.labels ?? []).map((l) => l.replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 50)),
+    },
+  };
 
   try {
     const response = await fetchImpl(url, {
@@ -112,4 +120,20 @@ export async function createJiraIssueFromTicket(
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : String(error) };
   }
+}
+
+export async function createJiraIssueFromTicket(
+  config: JiraClientConfig,
+  ticket: MaintenanceTicketPayload,
+  fetchImpl: typeof fetch = fetch
+): Promise<{ ok: true; issueKey: string; issueUrl: string } | { ok: false; error: string }> {
+  return createJiraIssue(
+    config,
+    {
+      summary: ticket.title,
+      description: ticket.description,
+      labels: ticket.labels,
+    },
+    fetchImpl
+  );
 }
