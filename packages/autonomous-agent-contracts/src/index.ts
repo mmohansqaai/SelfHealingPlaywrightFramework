@@ -31,6 +31,9 @@ export type AutonomousPageState = {
   domElementCount?: number;
   /** Phase 13 — compact DOM summary for LLM planner context. */
   interactiveElements?: AutonomousInteractiveElement[];
+  /** Phase 16 — optional vision capture note for planner (screenshot spike). */
+  visionNote?: string;
+  screenshotBytes?: number;
 };
 
 export type AutonomousLlmRecoveryContext = {
@@ -72,6 +75,8 @@ export type AutonomousRunOptions = {
   /** Phase 10 — governance overrides (merged with env). */
   /** Phase 14 — LLM goal verification at complete step (default on when plannerMode=llm). */
   llmVerification?: boolean;
+  /** Phase 16 — allow pay/delete/submit clicks without explicit goal permission. */
+  allowDestructiveActions?: boolean;
   governance?: AutonomousGovernanceOptions;
   /** Phase 10 — inject credentials from env instead of embedding in goal text. */
   secrets?: AutonomousSecrets;
@@ -103,6 +108,8 @@ export type AutonomousGovernanceRecord = {
   domainAllowed: boolean;
   plannerModeUsed: 'mock' | 'llm';
   costCapExceeded: boolean;
+  /** Phase 16 — destructive clicks blocked during run. */
+  destructiveActionsBlocked?: number;
 };
 
 export type AutonomousSuiteKpis = {
@@ -116,6 +123,21 @@ export type AutonomousSuiteKpis = {
   avgEstimatedCostUsd: number;
   needsHumanReviewCount: number;
   failedJourneyIds: string[];
+  /** Phase 16 — share of trace steps that used self-healing. */
+  healRate?: number;
+  healedStepsCount?: number;
+  totalTraceSteps?: number;
+  destructiveActionsBlocked?: number;
+  llmPlannerRuns?: number;
+};
+
+/** Phase 16 — dashboard / leadership rollup document. */
+export type AutonomousDashboardKpiDocument = {
+  kind: 'autonomous-kpi-v1';
+  generatedAt: string;
+  suiteName?: string;
+  buildVersion?: string;
+  kpis: AutonomousSuiteKpis;
 };
 
 export type AutonomousSuiteResult = {

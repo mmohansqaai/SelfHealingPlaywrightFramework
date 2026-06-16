@@ -18,5 +18,9 @@ export function formatPageStateForPrompt(pageState?: AutonomousPageState): strin
     }
   }
 
+  if (pageState.visionNote) {
+    lines.push('', `Vision: ${pageState.visionNote}`);
+  }
+
   return lines.join('\n');
 }

@@ -18,6 +18,7 @@ import {
 import { estimateAutonomousRunCostUsd, isCostWithinCap } from './cost-estimator';
 import { executeAutonomousStep } from './execute-step';
 import { getAutonomousPageState, getAutonomousPageStateForPlanner } from './get-page-state';
+import { enrichPageStateWithVision } from './vision-page-state';
 import {
   assertPlannerAllowedForCi,
   injectSecretsIntoGoal,
@@ -29,6 +30,7 @@ import { redactSecretsInText } from './redact-secrets';
 import { runMaintenanceAgent } from '../maintenance/maintenance-agent';
 import { assertDomainAllowed } from './strategies-for-hint';
 import { runVerificationAgent, summarizeVerifications } from './verification-agent';
+import { writeAutonomousReviewArtifact } from './human-review';
 
 export type AutonomousRunWithMaintenance = {
   result: AutonomousRunResult;
@@ -56,6 +58,7 @@ function buildGovernanceRecord(
     governance: ReturnType<typeof resolveAutonomousGovernanceFromEnv>;
     hostname: string;
     draft: Pick<AutonomousRunResult, 'stepsExecuted' | 'replanCount' | 'trace' | 'planner'>;
+    destructiveActionsBlocked?: number;
   }
 ): AutonomousGovernanceRecord {
   const estimatedCostUsd = estimateAutonomousRunCostUsd(params.draft);
@@ -70,6 +73,7 @@ function buildGovernanceRecord(
     domainAllowed: isDomainAllowed(params.hostname, params.governance.allowedDomains),
     plannerModeUsed: params.plannerMode,
     costCapExceeded: !isCostWithinCap(estimatedCostUsd, params.governance.maxCostUsdPerRun),
+    destructiveActionsBlocked: params.destructiveActionsBlocked ?? 0,
   };
 }
 
@@ -106,10 +110,13 @@ export async function runAutonomousTestWithMaintenance(
 
   const pageStateForPlan =
     plannerMode === 'llm'
-      ? await getAutonomousPageStateForPlanner(page).catch(() => ({
-          url: page.url(),
-          title: '',
-        }))
+      ? await enrichPageStateWithVision(
+          page,
+          await getAutonomousPageStateForPlanner(page).catch(() => ({
+            url: page.url(),
+            title: '',
+          }))
+        )
       : undefined;
 
   const plan = await planAutonomousGoalAsync({
@@ -126,6 +133,7 @@ export async function runAutonomousTestWithMaintenance(
   let replanCount = 0;
   let finalStatus: 'completed' | 'failed' = 'failed';
   let verificationDetail = 'Not verified';
+  let destructiveActionsBlocked = 0;
 
   const queue: AutonomousPlannedStep[] = [...plan.steps];
 
@@ -197,7 +205,13 @@ export async function runAutonomousTestWithMaintenance(
       healOnFailure,
       timeoutPerActionMs,
       allowedDomains,
+      goal: resolvedGoal,
+      allowDestructiveActions: options.allowDestructiveActions,
     });
+
+    if (exec.destructiveBlocked) {
+      destructiveActionsBlocked++;
+    }
 
     const pageState = await getAutonomousPageState(page).catch(() => ({ url: page.url(), title: '' }));
 
@@ -295,6 +309,7 @@ export async function runAutonomousTestWithMaintenance(
     governance,
     hostname,
     draft: draftResult,
+    destructiveActionsBlocked,
   });
 
   if (governanceRecord.costCapExceeded && finalStatus === 'completed') {
@@ -303,23 +318,33 @@ export async function runAutonomousTestWithMaintenance(
     governanceRecord.needsHumanReview = true;
   }
 
-  return {
-    result: {
-      status: finalStatus,
-      goal: resolvedGoal,
-      journeyId: options.journeyId,
-      planner: plan.planner,
-      stepsExecuted,
-      replanCount,
-      trace,
-      verifications,
-      verification: {
-        passed: finalStatus === 'completed',
-        detail: verificationDetail,
-      },
-      reasoning: plan.reasoning,
-      governance: governanceRecord,
+  const result: AutonomousRunResult = {
+    status: finalStatus,
+    goal: resolvedGoal,
+    journeyId: options.journeyId,
+    planner: plan.planner,
+    stepsExecuted,
+    replanCount,
+    trace,
+    verifications,
+    verification: {
+      passed: finalStatus === 'completed',
+      detail: verificationDetail,
     },
+    reasoning: plan.reasoning,
+    governance: governanceRecord,
+  };
+
+  if (
+    finalStatus === 'completed' ||
+    governanceRecord.needsHumanReview ||
+    process.env.AUTONOMOUS_WRITE_REVIEW === '1'
+  ) {
+    writeAutonomousReviewArtifact(result);
+  }
+
+  return {
+    result,
     maintenance:
       process.env.MAINTENANCE_AGENT === '1' || process.env.MAINTENANCE_AGENT === 'true'
         ? runMaintenanceAgent({

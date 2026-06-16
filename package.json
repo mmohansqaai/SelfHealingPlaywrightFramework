@@ -32,7 +32,7 @@
     "healing-service": "npm run build:healing-service && npm run start -w healing-service",
     "test:healing-service-phase2": "HEALING_SERVICE_URL=http://localhost:3921 AUTO_HEAL_DISCOVER=1 playwright test --config=playwright.phase2.config.ts --headed",
     "test:llm-agent": "npm run build:llm-locator-agent && RUN_UNIT_TESTS=1 playwright test tests/llm-provider.unit.spec.ts tests/llm-locator-agent.unit.spec.ts tests/agentic-healing.unit.spec.ts",
-    "test:unit": "npm run build:autonomous-agent && RUN_UNIT_TESTS=1 playwright test tests/dom-scan-discovery.unit.spec.ts tests/healing-service.unit.spec.ts tests/locator-agent.unit.spec.ts tests/llm-provider.unit.spec.ts tests/llm-locator-agent.unit.spec.ts tests/agentic-healing.unit.spec.ts tests/autonomous-test-agent.unit.spec.ts tests/autonomous-evaluation.unit.spec.ts tests/autonomous-governance.unit.spec.ts tests/autonomous-llm-planner.unit.spec.ts tests/autonomous-llm-verification.unit.spec.ts tests/autonomous-page-state.unit.spec.ts tests/maintenance-agent.unit.spec.ts tests/maintenance-jira.unit.spec.ts tests/maintenance-phase15.unit.spec.ts",
+    "test:unit": "npm run build:autonomous-agent && RUN_UNIT_TESTS=1 playwright test tests/dom-scan-discovery.unit.spec.ts tests/healing-service.unit.spec.ts tests/locator-agent.unit.spec.ts tests/llm-provider.unit.spec.ts tests/llm-locator-agent.unit.spec.ts tests/agentic-healing.unit.spec.ts tests/autonomous-test-agent.unit.spec.ts tests/autonomous-evaluation.unit.spec.ts tests/autonomous-governance.unit.spec.ts tests/autonomous-llm-planner.unit.spec.ts tests/autonomous-llm-verification.unit.spec.ts tests/autonomous-page-state.unit.spec.ts tests/autonomous-phase16.unit.spec.ts tests/maintenance-agent.unit.spec.ts tests/maintenance-jira.unit.spec.ts tests/maintenance-phase15.unit.spec.ts",
     "test": "playwright test",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
@@ -56,7 +56,8 @@
     "publish:maintenance-tickets": "npm run build:autonomous-agent && MAINTENANCE_PUBLISH_JIRA=1 node scripts/publish-maintenance-tickets.mjs",
     "publish:ci-jira-ticket": "npm run build:autonomous-agent && MAINTENANCE_PUBLISH_JIRA=1 node scripts/publish-ci-jira-ticket.mjs",
     "maintenance:approve": "npm run build:autonomous-agent && node scripts/approve-maintenance-proposal.mjs",
-    "maintenance:open-pr": "npm run build:autonomous-agent && node scripts/open-maintenance-pr.mjs"
+    "maintenance:open-pr": "npm run build:autonomous-agent && node scripts/open-maintenance-pr.mjs",
+    "write:autonomous-kpis": "npm run build:autonomous-agent && node scripts/write-autonomous-kpis.mjs"
   },
   "dependencies": {
     "ai-healing-sdk": "file:packages/ai-healing-sdk"

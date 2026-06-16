@@ -9,6 +9,7 @@ import {
   resolveGithubActionsRunUrl,
   runAutonomousSuite,
   runMaintenanceAgentAsync,
+  writeAutonomousDashboardKpiDocument,
   writeAutonomousReviewArtifact,
 } from 'ai-healing-sdk';
 import type { MaintenanceAgentResult } from 'autonomous-agent-contracts';
@@ -34,6 +35,15 @@ test.describe('Phase 10 autonomous CI smoke @autonomous-ci-smoke', () => {
     });
 
     await attachAutonomousSuiteKpis(testInfo, suite.kpis);
+
+    const kpiPath = writeAutonomousDashboardKpiDocument(suite, 'autonomous-review/kpi-summary.json', {
+      suiteName: 'Autonomous CI Smoke',
+      buildVersion: process.env.GITHUB_SHA,
+    });
+    await testInfo.attach('autonomous-kpi-summary', {
+      body: JSON.stringify({ kpiPath, kpis: suite.kpis }, null, 2),
+      contentType: 'application/json',
+    });
 
     const maintenanceResults: MaintenanceAgentResult[] = [];
 

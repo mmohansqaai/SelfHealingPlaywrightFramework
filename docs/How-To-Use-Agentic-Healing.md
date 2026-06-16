@@ -785,7 +785,68 @@ Repeated failure → Jira ticket with proposal link → human approves → draft
 
 ---
 
-## 23. Next steps
+## 24. Phase 16 — Fully Autonomous v1 polish
+
+Phase 16 adds **safety**, **leadership KPIs**, **trace→spec quality**, and an optional **vision spike** — positioning the platform as **Fully Autonomous v1** (with honest scope).
+
+### Destructive action guard
+
+Blocks pay / place-order / delete clicks unless the goal explicitly allows them:
+
+```bash
+# Blocked: goal "Browse catalog" + click "pay place order"
+# Allowed: goal "Complete purchase and place order"
+# Override: AUTONOMOUS_ALLOW_DESTRUCTIVE=1
+```
+
+| Variable | Purpose |
+|----------|---------|
+| `AUTONOMOUS_ALLOW_DESTRUCTIVE` | Allow all destructive clicks (use with care) |
+| `allowDestructiveActions` | Per-run SDK option |
+
+Blocked actions appear in governance as `destructiveActionsBlocked`.
+
+### Dashboard KPIs
+
+Suite KPIs now include **heal rate**, **LLM planner runs**, and **destructive actions blocked**:
+
+```bash
+npm run test:autonomous-ci-smoke   # writes autonomous-review/kpi-summary.json
+npm run write:autonomous-kpis
+```
+
+Document shape: `{ "kind": "autonomous-kpi-v1", "kpis": { ... } }` — ingest into your Real-Time Testing Dashboard or Confluence.
+
+### Trace → spec (human review)
+
+Successful autonomous runs write review artifacts to `autonomous-review/`:
+
+- `*-trace.txt` — full execution trace
+- `*-generated.spec.ts` — starter Playwright spec with `@phase16-review-required`
+- `*-review.json` — metadata for CI attachments
+
+Generated specs include `enableHealing` and comments for self-healed steps. **Do not auto-merge.**
+
+### Vision spike (optional)
+
+```bash
+AUTONOMOUS_VISION=1 AUTONOMOUS_PLANNER=llm npm run test:autonomous-llm-login
+```
+
+Captures a JPEG screenshot metadata note for the LLM planner prompt (DOM summary remains primary). Full vision LLM routing is experimental.
+
+### Fully Autonomous v1 — honest positioning
+
+| In scope | Out of scope |
+|----------|--------------|
+| NL goals + LLM/mock planner + verification | Any app, any goal without eval |
+| Self-healing + maintenance closed loop | Zero human review |
+| Governed CI (mock planner nightly, LLM eval weekly) | 100% deterministic real-LLM CI |
+| Held-out generalization harness | Replacing all hand-written tests |
+
+---
+
+## 25. Next steps
 
 1. Start with **Tier 1** in your project (`healable` + `AUTO_HEAL_DISCOVER=1`).
 2. Add **HTML report attachments** for visibility.

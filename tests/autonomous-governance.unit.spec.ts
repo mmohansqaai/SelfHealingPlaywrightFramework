@@ -70,6 +70,7 @@ test.describe('Phase 10 governance unit', () => {
     } as AutonomousRunResult;
     const spec = generatePlaywrightSpecFromTrace(result, 'demo');
     expect(spec).toContain("@generated-from-autonomous");
+    expect(spec).toContain("@phase16-review-required");
     expect(spec).toContain("page.goto('/login')");
   });
 });

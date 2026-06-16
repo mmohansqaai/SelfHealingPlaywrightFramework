@@ -139,7 +139,14 @@ export {
   goalUsesSecretPlaceholders,
 } from './autonomous/governance';
 export { estimateAutonomousRunCostUsd, isCostWithinCap } from './autonomous/cost-estimator';
-export { buildAutonomousSuiteKpis, buildAutonomousSuiteResult, formatAutonomousSuiteKpisBody } from './autonomous/kpis';
+export { buildAutonomousSuiteKpis, buildAutonomousSuiteResult, formatAutonomousSuiteKpisBody, buildAutonomousDashboardKpiDocument, writeAutonomousDashboardKpiDocument } from './autonomous/kpis';
+export {
+  isDestructiveAutonomousAction,
+  goalExplicitlyAllowsDestructiveActions,
+  isDestructiveActionAllowed,
+  destructiveActionBlockedReason,
+} from './autonomous/destructive-action-guard';
+export { enrichPageStateWithVision, isAutonomousVisionEnabled } from './autonomous/vision-page-state';
 export { generatePlaywrightSpecFromTrace } from './autonomous/trace-to-spec';
 export { formatHumanReviewBody, writeAutonomousReviewArtifact } from './autonomous/human-review';
 export type { AutonomousReviewArtifact } from './autonomous/human-review';
@@ -150,6 +157,7 @@ export type {
   AutonomousGovernanceRecord,
   AutonomousSuiteKpis,
   AutonomousSuiteResult,
+  AutonomousDashboardKpiDocument,
   AutonomousJourneyDefinition,
   MaintenanceHealingSnapshot,
   MaintenanceFailureRecord,

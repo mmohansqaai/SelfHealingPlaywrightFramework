@@ -3,6 +3,10 @@ import type { AutonomousAction, AutonomousPlannedStep, MaintenanceHealingSnapsho
 import { clickHealing, expectVisibleHealing, fillHealing } from '../retry/retry-orchestrator';
 import { healingSnapshotFromResult } from '../maintenance/healing-capture';
 import { assertDomainAllowed, strategiesForHeading, strategiesForHint, strategiesForText } from './strategies-for-hint';
+import {
+  destructiveActionBlockedReason,
+  isDestructiveActionAllowed,
+} from './destructive-action-guard';
 
 export type ExecuteStepResult = {
   ok: boolean;
@@ -10,12 +14,15 @@ export type ExecuteStepResult = {
   healed?: boolean;
   usedStrategy?: string;
   healingSnapshot?: MaintenanceHealingSnapshot;
+  destructiveBlocked?: boolean;
 };
 
 export type ExecuteStepOptions = {
   healOnFailure?: boolean;
   timeoutPerActionMs?: number;
   allowedDomains?: string[];
+  goal?: string;
+  allowDestructiveActions?: boolean;
 };
 
 async function runFill(page: Page, action: Extract<AutonomousAction, { type: 'fill' }>, options: ExecuteStepOptions): Promise<ExecuteStepResult> {
@@ -161,6 +168,22 @@ export async function executeAutonomousStep(
   options: ExecuteStepOptions = {}
 ): Promise<ExecuteStepResult> {
   const action = step.action;
+
+  if (
+    options.goal &&
+    !isDestructiveActionAllowed({
+      goal: options.goal,
+      action,
+      allowDestructiveActions: options.allowDestructiveActions,
+    })
+  ) {
+    return {
+      ok: false,
+      error: destructiveActionBlockedReason(action),
+      destructiveBlocked: true,
+      usedStrategy: 'destructive-guard',
+    };
+  }
 
   if (action.type === 'navigate') {
     await page.goto(action.url, { waitUntil: 'domcontentloaded' });
