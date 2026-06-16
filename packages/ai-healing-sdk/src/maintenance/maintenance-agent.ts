@@ -7,6 +7,11 @@ import type {
   MaintenanceTicketPayload,
 } from 'autonomous-agent-contracts';
 import { listMaintenanceFailures, recordMaintenanceFailure } from './failure-tracker';
+import {
+  collectMaintenanceRunContext,
+  extractPlannerHintsFromTrace,
+  findProposalsForFailure,
+} from './maintenance-context';
 import { createPersistenceProposal, writePersistenceProposal } from './persistence-proposal';
 import { buildMaintenanceTicket, writeMaintenanceTicket } from './ticket-payload';
 import { publishMaintenanceTicketsToJira } from './ticket-publisher';
@@ -45,6 +50,8 @@ export function runMaintenanceAgent(
   const opts = resolveMaintenanceOptions(options);
   const proposals: MaintenancePersistenceProposal[] = [];
   const tickets: MaintenanceTicketPayload[] = [];
+  const runPlannerHints = extractPlannerHintsFromTrace(result.trace);
+  const failureStorePath = process.env.MAINTENANCE_FAILURE_STORE ?? `${opts.outputDir}/.maintenance-failures.json`;
 
   for (const step of result.trace) {
     if (!step.ok) {
@@ -54,6 +61,12 @@ export function runMaintenanceAgent(
         targetHint: hint,
         pageUrl: step.pageUrl ?? '',
         error: step.error,
+        storePath: failureStorePath,
+        plannerHints: runPlannerHints.filter(
+          (h) =>
+            h.stepId === step.stepId ||
+            (h.targetHint && h.targetHint.toLowerCase() === hint.toLowerCase())
+        ),
       });
     }
 
@@ -74,9 +87,16 @@ export function runMaintenanceAgent(
     }
   }
 
-  const repeatedFailures = listMaintenanceFailures(opts.failureThreshold);
+  const patchesDir = `${opts.outputDir}/patches`;
+  const { allProposals } = collectMaintenanceRunContext(result, proposals, patchesDir);
+  const repeatedFailures = listMaintenanceFailures(opts.failureThreshold, failureStorePath);
   for (const failure of repeatedFailures) {
-    const ticket = buildMaintenanceTicket(failure, opts.ticketProvider);
+    const linkedProposals = findProposalsForFailure(failure, allProposals);
+    const ticket = buildMaintenanceTicket(failure, opts.ticketProvider, {
+      linkedProposals,
+      plannerHints: failure.plannerHints ?? runPlannerHints,
+      outputDir: opts.outputDir,
+    });
     writeMaintenanceTicket(ticket, `${opts.outputDir}/tickets`);
     tickets.push(ticket);
   }

@@ -140,6 +140,15 @@ export type MaintenanceHealingSnapshot = {
   query: { type: 'css' | 'role'; value?: string; role?: string; name?: string };
 };
 
+export type MaintenancePlannerHint = {
+  stepId: string;
+  targetHint?: string;
+  actionType: string;
+  reasoning?: string;
+  replanned: boolean;
+  pageUrl?: string;
+};
+
 export type MaintenanceFailureRecord = {
   id: string;
   stepId: string;
@@ -149,6 +158,8 @@ export type MaintenanceFailureRecord = {
   lastError?: string;
   firstSeenAt: string;
   lastSeenAt: string;
+  /** Phase 15 — LLM replan / recovery hints accumulated across runs. */
+  plannerHints?: MaintenancePlannerHint[];
 };
 
 export type MaintenancePersistenceProposal = {
@@ -159,8 +170,11 @@ export type MaintenancePersistenceProposal = {
   methodName: string;
   candidate: MaintenanceHealingSnapshot;
   patchSnippet: string;
-  status: 'pending_review';
+  status: 'pending_review' | 'approved' | 'applied' | 'rejected';
   createdAt: string;
+  approvedAt?: string;
+  appliedAt?: string;
+  proposalFilePath?: string;
 };
 
 export type MaintenanceTicketPayload = {
@@ -170,6 +184,9 @@ export type MaintenanceTicketPayload = {
   labels: string[];
   failure: MaintenanceFailureRecord;
   createdAt: string;
+  /** Phase 15 — locator proposals linked to this failure. */
+  linkedProposals?: MaintenancePersistenceProposal[];
+  plannerHints?: MaintenancePlannerHint[];
 };
 
 export type MaintenanceAgentOptions = {
@@ -179,6 +196,16 @@ export type MaintenanceAgentOptions = {
   proposePersistence?: boolean;
   /** When true (or JIRA_* env set), publish tickets to live Jira after file write. */
   publishTicketsLive?: boolean;
+};
+
+export type MaintenancePrBotResult = {
+  opened: boolean;
+  dryRun?: boolean;
+  branch?: string;
+  prUrl?: string;
+  proposalsApplied: string[];
+  changedFiles: string[];
+  error?: string;
 };
 
 export type MaintenanceTicketPublishResult = {

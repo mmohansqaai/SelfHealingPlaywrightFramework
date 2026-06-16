@@ -34,19 +34,48 @@ export function isJiraPublishEnabled(options?: { publishTicketsLive?: boolean })
   return resolveJiraConfigFromEnv() !== null && process.env.CI === 'true';
 }
 
-/** Convert plain-text maintenance description to Jira Cloud ADF (minimal). */
+/** Convert plain-text maintenance description to Jira Cloud ADF (minimal + fenced code). */
 export function maintenanceDescriptionToAdf(description: string): Record<string, unknown> {
   const lines = description.split('\n');
   const content: Record<string, unknown>[] = [];
+  let codeBuffer: string[] = [];
+  let codeLanguage = '';
+  let inCode = false;
+
+  const flushCode = () => {
+    if (codeBuffer.length === 0) return;
+    content.push({
+      type: 'codeBlock',
+      attrs: codeLanguage ? { language: codeLanguage } : {},
+      content: [{ type: 'text', text: codeBuffer.join('\n') }],
+    });
+    codeBuffer = [];
+    codeLanguage = '';
+  };
 
   for (const line of lines) {
+    if (line.startsWith('```')) {
+      if (inCode) {
+        flushCode();
+        inCode = false;
+      } else {
+        inCode = true;
+        codeLanguage = line.slice(3).trim() || 'text';
+      }
+      continue;
+    }
+    if (inCode) {
+      codeBuffer.push(line);
+      continue;
+    }
     if (!line.trim()) continue;
-    if (line.startsWith('```')) continue;
     content.push({
       type: 'paragraph',
       content: [{ type: 'text', text: line }],
     });
   }
+
+  if (inCode) flushCode();
 
   if (content.length === 0) {
     content.push({ type: 'paragraph', content: [{ type: 'text', text: description.slice(0, 32000) }] });

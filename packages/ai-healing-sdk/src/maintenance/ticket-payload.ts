@@ -1,11 +1,67 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import type { MaintenanceFailureRecord, MaintenanceTicketPayload } from 'autonomous-agent-contracts';
+import type {
+  MaintenanceFailureRecord,
+  MaintenancePersistenceProposal,
+  MaintenancePlannerHint,
+  MaintenanceTicketPayload,
+} from 'autonomous-agent-contracts';
+
+export type MaintenanceTicketContext = {
+  linkedProposals?: MaintenancePersistenceProposal[];
+  plannerHints?: MaintenancePlannerHint[];
+  outputDir?: string;
+};
+
+function formatPlannerHintsSection(hints: MaintenancePlannerHint[]): string {
+  if (!hints.length) return '';
+  const lines = hints.map((h) => {
+    const parts = [
+      `- **${h.stepId}** (${h.actionType})${h.replanned ? ' [replan]' : ''}`,
+      h.targetHint ? `  - hint: \`${h.targetHint}\`` : '',
+      h.pageUrl ? `  - url: ${h.pageUrl}` : '',
+      h.reasoning ? `  - note: ${h.reasoning}` : '',
+    ];
+    return parts.filter(Boolean).join('\n');
+  });
+  return ['### LLM replan / recovery hints', '', ...lines, ''].join('\n');
+}
+
+function formatLinkedProposalsSection(proposals: MaintenancePersistenceProposal[], outputDir?: string): string {
+  if (!proposals.length) return '';
+  const blocks = proposals.map((p) => {
+    const relPath = p.proposalFilePath ?? `${outputDir ?? 'maintenance-output'}/patches/${p.proposalId}.json`;
+    return [
+      `#### Proposal \`${p.proposalId}\` (${p.status})`,
+      '',
+      `- Target: \`${p.targetFile}#${p.methodName}\``,
+      `- Step: \`${p.stepId}\` — ${p.targetHint}`,
+      `- Strategy: \`${p.candidate.strategyName}\` (score ${p.candidate.score})`,
+      `- File: \`${relPath}\``,
+      '',
+      '```typescript',
+      p.patchSnippet,
+      '```',
+      '',
+      'Approve locally:',
+      '',
+      '```bash',
+      `npm run maintenance:approve -- ${relPath}`,
+      'npm run maintenance:open-pr',
+      '```',
+      '',
+    ].join('\n');
+  });
+  return ['### Linked locator proposals', '', ...blocks].join('\n');
+}
 
 export function buildMaintenanceTicket(
   failure: MaintenanceFailureRecord,
-  provider: MaintenanceTicketPayload['provider'] = 'mock'
+  provider: MaintenanceTicketPayload['provider'] = 'mock',
+  context: MaintenanceTicketContext = {}
 ): MaintenanceTicketPayload {
+  const linkedProposals = context.linkedProposals ?? [];
+  const plannerHints = context.plannerHints ?? failure.plannerHints ?? [];
   const title = `[Autonomous QA] Repeated failure: ${failure.stepId} (${failure.targetHint})`;
   const description = [
     '## Autonomous test maintenance ticket',
@@ -27,12 +83,19 @@ export function buildMaintenanceTicket(
     failure.lastError ?? '(none recorded)',
     '```',
     '',
+    formatPlannerHintsSection(plannerHints),
+    formatLinkedProposalsSection(linkedProposals, context.outputDir),
     '### Suggested actions',
     '',
-    '1. Review `maintenance-patches/` for pending locator proposals',
-    '2. Update page object strategies or autonomous planner hints',
-    '3. Re-run `npm run test:autonomous-ci-smoke` after fix',
-  ].join('\n');
+    linkedProposals.length
+      ? '1. Review linked locator proposals above and approve with `npm run maintenance:approve`'
+      : '1. Review `maintenance-output/patches/` for pending locator proposals',
+    '2. Open a draft PR with `npm run maintenance:open-pr` after approval',
+    '3. Update page object strategies or autonomous planner hints',
+    '4. Re-run `npm run test:autonomous-ci-smoke` after fix',
+  ]
+    .filter(Boolean)
+    .join('\n');
 
   return {
     provider,
@@ -41,6 +104,8 @@ export function buildMaintenanceTicket(
     labels: ['autonomous-qa', 'self-healing', 'locator-drift', failure.stepId],
     failure,
     createdAt: new Date().toISOString(),
+    linkedProposals: linkedProposals.length ? linkedProposals : undefined,
+    plannerHints: plannerHints.length ? plannerHints : undefined,
   };
 }
 

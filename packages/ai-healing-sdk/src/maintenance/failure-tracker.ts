@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import type { MaintenanceFailureRecord } from 'autonomous-agent-contracts';
+import type { MaintenanceFailureRecord, MaintenancePlannerHint } from 'autonomous-agent-contracts';
+import { mergePlannerHints } from './maintenance-context';
 
 type FailureStore = Record<string, MaintenanceFailureRecord>;
 
@@ -37,6 +38,7 @@ export function recordMaintenanceFailure(params: {
   pageUrl: string;
   error?: string;
   storePath?: string;
+  plannerHints?: MaintenancePlannerHint[];
 }): MaintenanceFailureRecord {
   const file = storePath(params.storePath);
   const store = readStore(file);
@@ -52,6 +54,7 @@ export function recordMaintenanceFailure(params: {
     lastError: params.error,
     firstSeenAt: existing?.firstSeenAt ?? now,
     lastSeenAt: now,
+    plannerHints: mergePlannerHints(existing?.plannerHints, params.plannerHints ?? []),
   };
   store[key] = record;
   writeStore(file, store);

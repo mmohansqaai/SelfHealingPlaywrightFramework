@@ -158,12 +158,29 @@ export type {
   MaintenanceAgentOptions,
   MaintenanceAgentResult,
   MaintenanceTicketPublishResult,
+  MaintenancePlannerHint,
+  MaintenancePrBotResult,
 } from 'autonomous-agent-contracts';
 
 // Phase 11 — maintenance agent
 export { runMaintenanceAgent, runMaintenanceAgentAsync, applyMaintenanceProposal } from './maintenance/maintenance-agent';
 export { recordMaintenanceFailure, listMaintenanceFailures, maintenanceFailureStorePath } from './maintenance/failure-tracker';
 export { createPersistenceProposal, writePersistenceProposal } from './maintenance/persistence-proposal';
+export {
+  extractPlannerHintsFromTrace,
+  findProposalsForFailure,
+  loadProposalsFromDir,
+  collectMaintenanceRunContext,
+} from './maintenance/maintenance-context';
+export {
+  approveMaintenanceProposal,
+  listApprovedProposals,
+  applyApprovedMaintenanceProposals,
+  formatMaintenancePrBody,
+  openMaintenanceDraftPr,
+} from './maintenance/pr-bot';
+export type { MaintenancePrBotOptions } from './maintenance/pr-bot';
+export type { MaintenanceTicketContext } from './maintenance/ticket-payload';
 export { previewPersistencePatch, buildStrategySnippetForCandidate } from './core/persistence';
 export { buildMaintenanceTicket, writeMaintenanceTicket, formatJiraIssueFields, formatLinearIssueInput } from './maintenance/ticket-payload';
 export {

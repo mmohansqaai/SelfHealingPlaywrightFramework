@@ -1,0 +1,63 @@
+# Phase 15 — optional maintenance PR bot (manual dispatch after human approval)
+name: Maintenance PR Bot
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run only (list approved proposals, do not apply or open PR)'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+      open_pr:
+        description: 'Apply approved patches and open draft PR'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+jobs:
+  maintenance-pr:
+    name: Open maintenance draft PR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build workspace packages
+        run: npm run build:autonomous-agent
+
+      - name: Download maintenance artifacts (optional)
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: maintenance-output
+          path: maintenance-output
+
+      - name: Dry run — list approved proposals
+        if: inputs.dry_run == 'true'
+        run: MAINTENANCE_PR_DRY_RUN=1 npm run maintenance:open-pr
+
+      - name: Apply approved proposals and open draft PR
+        if: inputs.open_pr == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: MAINTENANCE_OPEN_PR=1 npm run maintenance:open-pr

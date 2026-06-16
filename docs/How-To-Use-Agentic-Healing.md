@@ -739,7 +739,53 @@ Held-out goals use phrasing like *"Authenticate as…"* and *"shopping basket"* 
 
 ---
 
-## 22. Next steps
+## 22. Phase 15 — Closed-loop maintenance (Jira + PR bot)
+
+Phase 15 closes the maintenance loop: repeated failures produce **rich Jira tickets** with linked locator proposals and LLM replan hints; after human approval, an optional **PR bot** opens a draft GitHub PR.
+
+### Jira tickets with proposals + planner hints
+
+When `MAINTENANCE_AGENT=1` and a step crosses the failure threshold, ticket bodies now include:
+
+- **Linked locator proposals** — patch snippet, target file/method, approve commands
+- **LLM replan / recovery hints** — replanned step IDs, target hints, page URLs from the failing run
+
+Live publish (`MAINTENANCE_PUBLISH_JIRA=1`) sends the enriched body to Jira with fenced code blocks in ADF.
+
+### Approve → draft PR workflow
+
+```bash
+# 1. Review proposal in maintenance-output/patches/
+# 2. Approve (human gate)
+npm run maintenance:approve -- maintenance-output/patches/prop-fill-email-123.json
+
+# 3. Dry run — list what would be applied
+MAINTENANCE_PR_DRY_RUN=1 npm run maintenance:open-pr
+
+# 4. Apply approved patches + open draft PR (requires gh CLI + git push access)
+MAINTENANCE_OPEN_PR=1 npm run maintenance:open-pr
+```
+
+| Variable | Purpose |
+|----------|---------|
+| `MAINTENANCE_OUTPUT_DIR` | Root for patches/tickets (default `maintenance-output/`) |
+| `MAINTENANCE_PR_DRY_RUN` | List approved proposals without applying |
+| `MAINTENANCE_OPEN_PR` | Apply approved proposals and run `gh pr create --draft` |
+| `MAINTENANCE_PR_BASE` | Base branch for PR (default `main`) |
+
+### GitHub Actions
+
+- **Autonomous Nightly** — unchanged; uploads `maintenance-output/` artifacts
+- **Maintenance PR Bot** — manual dispatch: `.github/workflows/maintenance-pr-bot.yml`
+  - Dry run (default) or apply + open draft PR
+
+### Exit criteria (Phase 15)
+
+Repeated failure → Jira ticket with proposal link → human approves → draft PR updates page objects → re-run nightly green.
+
+---
+
+## 23. Next steps
 
 1. Start with **Tier 1** in your project (`healable` + `AUTO_HEAL_DISCOVER=1`).
 2. Add **HTML report attachments** for visibility.
