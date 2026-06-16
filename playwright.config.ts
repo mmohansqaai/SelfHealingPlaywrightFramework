@@ -12,6 +12,7 @@ export default defineConfig({
     ...(process.env.RUN_AUTONOMOUS_CI === '1' ? [] : ['**/autonomous-ci-smoke.spec.ts']),
     ...(process.env.RUN_AUTONOMOUS_LLM === '1' ? [] : ['**/autonomous-login-llm.spec.ts']),
     ...(process.env.RUN_AUTONOMOUS_EVAL === '1' ? [] : ['**/autonomous-evaluation.spec.ts']),
+    ...(process.env.RUN_AUTONOMOUS_HELD_OUT === '1' ? [] : ['**/autonomous-held-out.spec.ts']),
   ],
   // Stores traces/screenshots/videos for each run.
   outputDir: 'test-results',

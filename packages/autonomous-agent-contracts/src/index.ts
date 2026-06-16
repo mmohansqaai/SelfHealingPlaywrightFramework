@@ -70,6 +70,8 @@ export type AutonomousRunOptions = {
   healOnFailure?: boolean;
   timeoutPerActionMs?: number;
   /** Phase 10 — governance overrides (merged with env). */
+  /** Phase 14 — LLM goal verification at complete step (default on when plannerMode=llm). */
+  llmVerification?: boolean;
   governance?: AutonomousGovernanceOptions;
   /** Phase 10 — inject credentials from env instead of embedding in goal text. */
   secrets?: AutonomousSecrets;

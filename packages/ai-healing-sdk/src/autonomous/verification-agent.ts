@@ -1,8 +1,21 @@
 import type { Page } from '@playwright/test';
+import type { AutonomousPageState, AutonomousStepTrace } from 'autonomous-agent-contracts';
+import { runLlmVerificationAgent } from 'autonomous-test-agent';
 import type { AutonomousVerificationRecord } from 'autonomous-agent-contracts';
 
-/** Phase 9 — lightweight verification checks after key milestones. */
-export async function runVerificationAgent(page: Page, goal: string): Promise<AutonomousVerificationRecord[]> {
+export type VerificationAgentOptions = {
+  plannerMode?: 'mock' | 'llm';
+  pageState?: AutonomousPageState;
+  trace?: AutonomousStepTrace[];
+  llmVerification?: boolean;
+};
+
+/** Phase 9 + 14 — rule-based checks plus optional LLM goal verification. */
+export async function runVerificationAgent(
+  page: Page,
+  goal: string,
+  options: VerificationAgentOptions = {}
+): Promise<AutonomousVerificationRecord[]> {
   const checks: AutonomousVerificationRecord[] = [];
   const path = (() => {
     try {
@@ -19,7 +32,7 @@ export async function runVerificationAgent(page: Page, goal: string): Promise<Au
     detail: `Current path: ${path}`,
   });
 
-  if (goal.toLowerCase().includes('checkout')) {
+  if (goal.toLowerCase().includes('checkout') || goal.toLowerCase().includes('payment')) {
     checks.push({
       checkId: 'checkout-or-cart-path',
       passed: /\/app\/(checkout|cart)/.test(path),
@@ -27,20 +40,39 @@ export async function runVerificationAgent(page: Page, goal: string): Promise<Au
     });
   }
 
-  if (goal.toLowerCase().includes('cart')) {
+  if (goal.toLowerCase().includes('cart') || goal.toLowerCase().includes('basket')) {
     checks.push({
       checkId: 'cart-signal',
-      passed: /cart|item|total/i.test(bodyText),
-      detail: /cart|item|total/i.test(bodyText) ? 'Cart-related text found' : 'No cart signal in page text',
+      passed: /cart|item|total|basket/i.test(bodyText) || /\/app\/cart/.test(path),
+      detail: /cart|item|total|basket/i.test(bodyText) ? 'Cart-related text found' : 'No cart signal in page text',
     });
   }
 
-  if (goal.toLowerCase().includes('product')) {
+  if (goal.toLowerCase().includes('product') || goal.toLowerCase().includes('catalog') || goal.toLowerCase().includes('browse')) {
     checks.push({
       checkId: 'products-signal',
-      passed: /product|catalog|storefront/i.test(bodyText),
+      passed: /product|catalog|storefront/i.test(bodyText) || /\/app\/products/.test(path),
       detail: /product|catalog|storefront/i.test(bodyText) ? 'Products signal found' : 'No products signal',
     });
+  }
+
+  const useLlm =
+    options.llmVerification !== false &&
+    (options.llmVerification === true || options.plannerMode === 'llm' || process.env.AUTONOMOUS_LLM_VERIFY === '1');
+
+  if (useLlm && options.trace) {
+    const pageState =
+      options.pageState ??
+      ({
+        url: page.url(),
+        title: await page.title().catch(() => ''),
+      } satisfies AutonomousPageState);
+
+    const llmChecks = await runLlmVerificationAgent(
+      { goal, pageState, trace: options.trace },
+      options.plannerMode
+    );
+    checks.push(...llmChecks);
   }
 
   return checks;

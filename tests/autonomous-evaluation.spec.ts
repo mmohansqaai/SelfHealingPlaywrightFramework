@@ -25,6 +25,7 @@ test.describe('Phase 13 Nova Retail evaluation @autonomous-evaluation', () => {
         allowedDomains: ['vercel.app'],
         healOnFailure: true,
         plannerMode,
+        llmVerification: true,
         maxSteps: 30,
         timeoutPerActionMs: 25_000,
         governance: {

@@ -8,7 +8,13 @@ import type {
   AutonomousVerificationRecord,
   MaintenanceAgentResult,
 } from 'autonomous-agent-contracts';
-import { isAssertionAction, planAutonomousGoalAsync, planLlmRecoverySteps, replanAfterAssertionFailure } from 'autonomous-test-agent';
+import {
+  isAssertionAction,
+  planAutonomousGoalAsync,
+  planLlmRecoverySteps,
+  replanAfterAssertionFailure,
+  resolveAutonomousLlmProvider,
+} from 'autonomous-test-agent';
 import { estimateAutonomousRunCostUsd, isCostWithinCap } from './cost-estimator';
 import { executeAutonomousStep } from './execute-step';
 import { getAutonomousPageState, getAutonomousPageStateForPlanner } from './get-page-state';
@@ -28,6 +34,18 @@ export type AutonomousRunWithMaintenance = {
   result: AutonomousRunResult;
   maintenance?: MaintenanceAgentResult;
 };
+
+/** Redact credentials only when sending goals to a real external LLM provider. */
+function goalForAutonomousPlanner(
+  resolvedGoal: string,
+  secrets: ReturnType<typeof resolveAutonomousSecretsFromEnv>,
+  plannerMode: 'mock' | 'llm'
+): string {
+  if (plannerMode === 'mock' || resolveAutonomousLlmProvider() === 'mock') {
+    return resolvedGoal;
+  }
+  return redactSecretsInText(resolvedGoal, secrets);
+}
 
 function buildGovernanceRecord(
   params: {
@@ -95,7 +113,7 @@ export async function runAutonomousTestWithMaintenance(
       : undefined;
 
   const plan = await planAutonomousGoalAsync({
-    goal: redactSecretsInText(resolvedGoal, secrets),
+    goal: goalForAutonomousPlanner(resolvedGoal, secrets, plannerMode),
     plannerMode,
     startUrl: options.startUrl,
     pageState: pageStateForPlan,
@@ -119,7 +137,28 @@ export async function runAutonomousTestWithMaintenance(
     const stepIndex = stepCounter++;
 
     if (step.action.type === 'complete') {
-      const postChecks = await runVerificationAgent(page, resolvedGoal).catch(() => []);
+      const pageStateForVerify = await getAutonomousPageStateForPlanner(page).catch(() => ({
+        url: page.url(),
+        title: '',
+      }));
+      const traceWithComplete: AutonomousStepTrace[] = [
+        ...trace,
+        {
+          stepIndex,
+          stepId: step.id,
+          action: step.action,
+          ok: true,
+          pageUrl: page.url(),
+          durationMs: Date.now() - started,
+          replanned: step.id.startsWith('replan-'),
+        },
+      ];
+      const postChecks = await runVerificationAgent(page, resolvedGoal, {
+        plannerMode,
+        trace: traceWithComplete,
+        pageState: pageStateForVerify,
+        llmVerification: options.llmVerification,
+      }).catch(() => []);
       verifications.push(...postChecks);
       trace.push({
         stepIndex,
@@ -194,7 +233,7 @@ export async function runAutonomousTestWithMaintenance(
           title: '',
         }));
         const llmRecovery = await planLlmRecoverySteps({
-          goal: redactSecretsInText(resolvedGoal, secrets),
+          goal: goalForAutonomousPlanner(resolvedGoal, secrets, 'llm'),
           plannerMode: 'llm',
           startUrl: options.startUrl,
           pageState: pageStateForRecovery,

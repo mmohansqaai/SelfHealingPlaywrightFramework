@@ -30,6 +30,7 @@ jobs:
       AUTONOMOUS_PLANNER: "llm"
       AUTONOMOUS_LLM_PROVIDER: ${{ github.event.inputs.llm_provider || 'mock' }}
       AUTONOMOUS_LLM_REPLAN: "1"
+      AUTONOMOUS_LLM_VERIFY: "1"
       AUTONOMOUS_LLM_FALLBACK_MOCK: "1"
       AUTONOMOUS_EVAL_MIN_COMPLETION_RATE: "0.7"
       AUTONOMOUS_MAX_SUITE_COST_USD: "5.00"
@@ -61,6 +62,12 @@ jobs:
 
       - name: Run 10-journey evaluation
         run: npm run test:autonomous-eval
+
+      - name: Run held-out generalization eval
+        run: npm run test:autonomous-held-out
+        env:
+          RUN_AUTONOMOUS_HELD_OUT: "1"
+          AUTONOMOUS_HELD_OUT_MIN_RATE: "0.6"
 
       - name: Upload Playwright report
         if: always()

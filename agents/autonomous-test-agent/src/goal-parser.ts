@@ -6,6 +6,12 @@ function cleanCredentialToken(token: string): string {
 export function parseLoginCredentials(goal: string): { email: string; password: string } | null {
   const normalized = goal.replace(/\s+/g, ' ').trim();
 
+  if (/\{\{REDACTED_EMAIL\}\}/.test(normalized) && /\{\{REDACTED_PASSWORD\}\}/.test(normalized)) {
+    const email = process.env.AUTONOMOUS_CUSTOMER_EMAIL ?? process.env.CUSTOMER_EMAIL ?? 'test@demo.com';
+    const password = process.env.AUTONOMOUS_CUSTOMER_PASSWORD ?? process.env.CUSTOMER_PASSWORD ?? 'password123';
+    return email && password ? { email, password } : null;
+  }
+
   const emailMatch = normalized.match(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/);
   if (!emailMatch) return null;
 
@@ -30,22 +36,27 @@ export function parseLoginCredentials(goal: string): { email: string; password: 
 
 export function isLoginGoal(goal: string): boolean {
   const g = goal.toLowerCase();
-  return /\blog\s*in\b|\blogin\b|\bsign\s*in\b/.test(g) && parseLoginCredentials(goal) !== null;
+  return (
+    /\blog\s*in\b|\blogin\b|\bsign\s*in\b|\bauthenticate\b|\bsigning\s+in\b/.test(g) &&
+    parseLoginCredentials(goal) !== null
+  );
 }
 
 export function isCheckoutGoal(goal: string): boolean {
   const g = goal.toLowerCase();
   return (
     /\bcheckout\b/.test(g) ||
-    /\badd\b.*\b(cart|product)\b/.test(g) ||
+    /\bpayment\b/.test(g) ||
+    /\badd\b.*\b(cart|product|basket)\b/.test(g) ||
     /\breach checkout\b/.test(g) ||
-    /\bgo to cart\b/.test(g)
+    /\bgo to cart\b/.test(g) ||
+    /\bproceed to checkout\b/.test(g)
   );
 }
 
 export function isProductsGoal(goal: string): boolean {
   const g = goal.toLowerCase();
-  return /\bproducts\b|\bcatalog\b|\bstorefront\b/.test(g);
+  return /\bproducts\b|\bcatalog\b|\bstorefront\b|\bbrowse\b/.test(g);
 }
 
 export function isPlaceOrderGoal(goal: string): boolean {

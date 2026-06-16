@@ -712,7 +712,34 @@ Weekly + manual: `.github/workflows/autonomous-llm-eval.yml` — runs 10 Nova Re
 
 ---
 
-## 21. Next steps
+## 21. Phase 14 — LLM verification + held-out goals
+
+After the agent signals `complete`, an **LLM verification agent** checks whether the goal was truly satisfied (not just that steps ran). Rule-based checks still run first; LLM adds a strict `llm-goal-satisfied` verdict.
+
+### Enable
+
+```bash
+AUTONOMOUS_LLM_VERIFY=1 AUTONOMOUS_PLANNER=llm npm run test:autonomous-llm-login
+```
+
+| Variable | Purpose |
+|----------|---------|
+| `AUTONOMOUS_LLM_VERIFY` | Force LLM verification (default on when `plannerMode=llm`) |
+| `RUN_AUTONOMOUS_HELD_OUT` | Run 5 paraphrased goals not in mock templates |
+| `AUTONOMOUS_HELD_OUT_MIN_RATE` | Pass threshold for held-out set (default `0.6`) |
+
+### Held-out eval (generalization)
+
+```bash
+AUTONOMOUS_PLANNER=llm AUTONOMOUS_LLM_PROVIDER=openai \
+  AUTONOMOUS_LLM_API_KEY=sk-... npm run test:autonomous-held-out
+```
+
+Held-out goals use phrasing like *"Authenticate as…"* and *"shopping basket"* — mock planner templates do not match verbatim. Real OpenAI/Anthropic recommended for held-out; mock LLM uses extended goal-parser + strict verification.
+
+---
+
+## 22. Next steps
 
 1. Start with **Tier 1** in your project (`healable` + `AUTO_HEAL_DISCOVER=1`).
 2. Add **HTML report attachments** for visibility.
