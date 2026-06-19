@@ -45,18 +45,18 @@ jobs:
         run: npm ci
 
       - name: Build workspace packages
-        run: npm run build:autonomous-agent
+        run: npm run install:nova-retail-qa
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
       - name: Run LLM planner login E2E
-        run: npm run test:autonomous-llm-login
+        run: npm run test:autonomous-llm-login --prefix examples/nova-retail-qa
 
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: autonomous-llm-planner-report
-          path: playwright-report/
+          path: examples/nova-retail-qa/playwright-report/
           retention-days: 7

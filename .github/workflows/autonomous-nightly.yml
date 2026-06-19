@@ -59,17 +59,17 @@ jobs:
         run: npm ci
 
       - name: Build workspace packages
-        run: npm run build:autonomous-agent
+        run: npm run install:nova-retail-qa
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
       - name: Run autonomous CI smoke
-        run: npm run test:autonomous-ci-smoke
+        run: npm run test:autonomous-ci-smoke --prefix examples/nova-retail-qa
 
       - name: Publish Jira ticket (every run)
         if: always()
-        run: npm run publish:ci-jira-ticket
+        run: npm run publish:ci-jira-ticket --prefix examples/nova-retail-qa
         env:
           CI_RUN_STATUS: ${{ job.status }}
 
@@ -78,7 +78,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: maintenance-output
-          path: maintenance-output/
+          path: |
+            examples/nova-retail-qa/maintenance-output/
+            .maintenance-failures.json
           if-no-files-found: ignore
           retention-days: 14
 
@@ -87,7 +89,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: autonomous-review
-          path: autonomous-review/
+          path: examples/nova-retail-qa/autonomous-review/
           if-no-files-found: ignore
           retention-days: 14
 
@@ -96,5 +98,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: autonomous-playwright-report
-          path: playwright-report/
+          path: examples/nova-retail-qa/playwright-report/
           retention-days: 7

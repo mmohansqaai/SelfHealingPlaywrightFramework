@@ -3,24 +3,11 @@ import type { Page } from '@playwright/test';
 type AriaRole = Parameters<Page['getByRole']>[0];
 import { getHistoryWeight } from '../history';
 import { queryKey, resolveQuery } from '../locator-query';
-import type { GeneratedLocatorCandidate, GeneratedLocatorQuery } from '../healing-types';
+import type { DomElementSnapshot, GeneratedLocatorCandidate, GeneratedLocatorQuery } from 'ai-healing-core';
 import { failureHints, hasSignal } from './intent-hints';
 import type { AutoHealContext, DiscoveryStrategy } from './types';
 
-/** Serializable element snapshot from an in-page DOM inventory pass. */
-export type DomElementSnapshot = {
-  tag: string;
-  inputType?: string;
-  id?: string;
-  name?: string;
-  testId?: string;
-  role?: string;
-  ariaLabel?: string;
-  placeholder?: string;
-  text?: string;
-  href?: string;
-  disabled: boolean;
-};
+export type { DomElementSnapshot } from 'ai-healing-core';
 
 const MAX_SCAN_ELEMENTS = 80;
 const MAX_CANDIDATES = 12;

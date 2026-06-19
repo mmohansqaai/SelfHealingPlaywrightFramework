@@ -5,8 +5,8 @@ const healingServicePort = process.env.HEALING_SERVICE_PORT ?? '3921';
 const healingServiceUrl = process.env.HEALING_SERVICE_URL ?? `http://localhost:${healingServicePort}`;
 
 export default defineConfig({
-  testDir: './tests',
-  testMatch: ['**/healing-service-phase2.spec.ts', '**/healing-service.unit.spec.ts'],
+  testDir: './examples/nova-retail-qa/tests',
+  testMatch: ['**/healing-service-phase2.spec.ts'],
   outputDir: 'test-results',
   fullyParallel: false,
   workers: 1,

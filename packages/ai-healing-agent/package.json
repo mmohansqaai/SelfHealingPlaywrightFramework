@@ -1,0 +1,29 @@
+{
+  "name": "ai-healing-agent",
+  "version": "0.1.0",
+  "description": "Framework-agnostic local agentic healing loop (observe → tools → act → reflect) for any HealingDriver",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "ai-healing-core": "file:../ai-healing-core"
+  },
+  "keywords": ["self-healing", "agentic", "locator", "test-automation"],
+  "license": "MIT",
+  "engines": { "node": ">=18" },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}

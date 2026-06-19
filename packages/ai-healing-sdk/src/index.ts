@@ -1,3 +1,16 @@
+// Framework-agnostic core (re-export for convenience)
+export type {
+  HealingDriver,
+  TestFramework,
+  DriverClickOptions,
+  DriverFillOptions,
+  DriverVisibleOptions,
+} from 'ai-healing-core';
+export { queryKey } from 'ai-healing-core';
+
+// Playwright driver adapter
+export { PlaywrightHealingDriver, createPlaywrightDriver } from './driver/playwright-driver';
+
 // Phase 1 public API
 export { enableHealing } from './wrappers/enable-healing';
 export { healable } from './wrappers/healable';
@@ -77,141 +90,7 @@ export type { TelemetryEvent } from './telemetry/telemetry';
 // Interceptors
 export { recordStrategyFailure, formatExhaustedStrategiesError } from './interceptors/failure-handler';
 
-// Phase 8 — autonomous test agent
-export { runAutonomousTest, runAutonomousTestWithMaintenance, formatAutonomousTraceBody } from './autonomous/run-autonomous-test';
-export type { AutonomousRunWithMaintenance } from './autonomous/run-autonomous-test';
-export { executeAutonomousStep } from './autonomous/execute-step';
-export { getAutonomousPageState } from './autonomous/get-page-state';
-export { strategiesForHint, strategiesForHeading, strategiesForText, assertDomainAllowed } from './autonomous/strategies-for-hint';
-export { runVerificationAgent, summarizeVerifications } from './autonomous/verification-agent';
-export { attachAutonomousTrace } from './reporters/healing-reporter';
-export type {
-  AutonomousAction,
-  AutonomousPlannedStep,
-  AutonomousPlanRequest,
-  AutonomousPlanResponse,
-  AutonomousRunOptions,
-  AutonomousRunResult,
-  AutonomousStepTrace,
-  AutonomousPageState,
-  AutonomousVerificationRecord,
-  AutonomousReplanRequest,
-} from 'autonomous-agent-contracts';
-export {
-  replanAfterAssertionFailure,
-  isAssertionAction,
-  planAutonomousGoal,
-  planAutonomousGoalMock,
-  planAutonomousGoalAsync,
-  planAutonomousGoalWithLlm,
-  planLlmRecoverySteps,
-  parseLlmPlanJson,
-  toEvaluationJourneyDefinitions,
-  toHeldOutJourneyDefinitions,
-  NOVA_RETAIL_HELD_OUT_JOURNEYS,
-  resolveAutonomousLlmProvider,
-  runLlmVerificationAgent,
-  isLlmVerificationEnabled,
-  mockLlmVerification,
-  parseLlmVerificationJson,
-  NOVA_RETAIL_EVALUATION_JOURNEYS,
-  AUTONOMOUS_CI_SMOKE_JOURNEYS,
-  AUTONOMOUS_GOAL_TEMPLATES,
-} from 'autonomous-test-agent';
-export type { EvaluationJourney } from 'autonomous-test-agent';
-
-// Phase 10 — production governance
-export { runAutonomousSuite } from './autonomous/suite-runner';
-export {
-  runAutonomousEvaluation,
-  formatAutonomousEvaluationBody,
-} from './autonomous/evaluation-runner';
-export type { AutonomousEvaluationResult, AutonomousEvaluationKpis, RunAutonomousEvaluationOptions } from './autonomous/evaluation-runner';
-export { getAutonomousPageStateForPlanner } from './autonomous/get-page-state';
-export { redactSecretsInText } from './autonomous/redact-secrets';
-export type { RunAutonomousSuiteOptions } from './autonomous/suite-runner';
-export {
-  resolveAutonomousSecretsFromEnv,
-  injectSecretsIntoGoal,
-  resolveAutonomousGovernanceFromEnv,
-  assertPlannerAllowedForCi,
-  isDomainAllowed,
-  goalUsesSecretPlaceholders,
-} from './autonomous/governance';
-export { estimateAutonomousRunCostUsd, isCostWithinCap } from './autonomous/cost-estimator';
-export { buildAutonomousSuiteKpis, buildAutonomousSuiteResult, formatAutonomousSuiteKpisBody, buildAutonomousDashboardKpiDocument, writeAutonomousDashboardKpiDocument } from './autonomous/kpis';
-export {
-  isDestructiveAutonomousAction,
-  goalExplicitlyAllowsDestructiveActions,
-  isDestructiveActionAllowed,
-  destructiveActionBlockedReason,
-} from './autonomous/destructive-action-guard';
-export { enrichPageStateWithVision, isAutonomousVisionEnabled } from './autonomous/vision-page-state';
-export { generatePlaywrightSpecFromTrace } from './autonomous/trace-to-spec';
-export { formatHumanReviewBody, writeAutonomousReviewArtifact } from './autonomous/human-review';
-export type { AutonomousReviewArtifact } from './autonomous/human-review';
-export { attachAutonomousSuiteKpis, attachAutonomousHumanReview } from './reporters/healing-reporter';
-export type {
-  AutonomousSecrets,
-  AutonomousGovernanceOptions,
-  AutonomousGovernanceRecord,
-  AutonomousSuiteKpis,
-  AutonomousSuiteResult,
-  AutonomousDashboardKpiDocument,
-  AutonomousJourneyDefinition,
-  MaintenanceHealingSnapshot,
-  MaintenanceFailureRecord,
-  MaintenancePersistenceProposal,
-  MaintenanceTicketPayload,
-  MaintenanceAgentOptions,
-  MaintenanceAgentResult,
-  MaintenanceTicketPublishResult,
-  MaintenancePlannerHint,
-  MaintenancePrBotResult,
-} from 'autonomous-agent-contracts';
-
-// Phase 11 — maintenance agent
-export { runMaintenanceAgent, runMaintenanceAgentAsync, applyMaintenanceProposal } from './maintenance/maintenance-agent';
-export { recordMaintenanceFailure, listMaintenanceFailures, maintenanceFailureStorePath } from './maintenance/failure-tracker';
-export { createPersistenceProposal, writePersistenceProposal } from './maintenance/persistence-proposal';
-export {
-  extractPlannerHintsFromTrace,
-  findProposalsForFailure,
-  loadProposalsFromDir,
-  collectMaintenanceRunContext,
-} from './maintenance/maintenance-context';
-export {
-  approveMaintenanceProposal,
-  listApprovedProposals,
-  applyApprovedMaintenanceProposals,
-  formatMaintenancePrBody,
-  openMaintenanceDraftPr,
-} from './maintenance/pr-bot';
-export type { MaintenancePrBotOptions } from './maintenance/pr-bot';
-export type { MaintenanceTicketContext } from './maintenance/ticket-payload';
+// DOM scan (used by healing + external consumers)
+export type { DomElementSnapshot } from './core/discovery/dom-scan-discovery';
+export { scanDomElements } from './core/discovery/dom-scan-discovery';
 export { previewPersistencePatch, buildStrategySnippetForCandidate } from './core/persistence';
-export { buildMaintenanceTicket, writeMaintenanceTicket, formatJiraIssueFields, formatLinearIssueInput } from './maintenance/ticket-payload';
-export {
-  publishMaintenanceTicketsToJira,
-} from './maintenance/ticket-publisher';
-export {
-  resolveJiraConfigFromEnv,
-  isJiraPublishEnabled,
-  createJiraIssue,
-  createJiraIssueFromTicket,
-  createJiraIssueWithTypeFallback,
-  resolveCiSummaryIssueTypes,
-  buildJiraCreateIssueBody,
-  maintenanceDescriptionToAdf,
-} from './maintenance/jira-client';
-export {
-  publishAutonomousCiSummaryToJira,
-  publishCiRunTicketEveryRun,
-  writeCiRunContextForJira,
-  readCiRunContextForJira,
-  buildCiRunSummaryDescription,
-  isCiSummaryPublishEnabled,
-  resolveGithubActionsRunUrl,
-} from './maintenance/jira-ci-summary';
-export type { JiraClientConfig } from './maintenance/jira-client';
-export { NOVA_RETAIL_LOCATOR_TARGETS, resolveLocatorTarget, toHealingSnapshot, snapshotToCandidate } from './maintenance/locator-target-map';

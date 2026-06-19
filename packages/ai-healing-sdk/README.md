@@ -2,13 +2,17 @@
 
 Plug-and-play **agentic** self-healing for Playwright tests.
 
-**Full guide:** [docs/How-To-Use-Agentic-Healing.md](../../docs/How-To-Use-Agentic-Healing.md)
+Zero Nova / autonomous dependencies — ship this package alone to npm or a dedicated git repo.
 
 ## Install
 
 ```bash
 npm install ai-healing-sdk @playwright/test
 ```
+
+**Standalone repo:** see [STANDALONE-REPO.md](./STANDALONE-REPO.md) (extract from monorepo with `npm run extract:healing-sdk-repo` at workspace root).
+
+**Example project:** `examples/playwright-plug-and-play` in the dev monorepo, or `example/` in the extracted standalone repo.
 
 ## Quick start (pure agentic, in-process)
 
@@ -35,11 +39,9 @@ When a locator fails, the SDK runs an **observe → tool use → validate → re
 ```bash
 export HEALING_SERVICE_URL=http://localhost:3921
 export AUTO_HEAL_DISCOVER=1
-export HEALING_LLM_PROVIDER=mock   # or openai | anthropic on the service
-npm run healing-service            # from monorepo root
 ```
 
-LLM API keys are configured on **healing-service only** — not in your Playwright project. See `docs/agentic-healing-setup.md`.
+Point `HEALING_SERVICE_URL` at your own [healing-service](https://github.com/YOUR_ORG/healing-service) deployment if you use the HTTP transport. LLM keys stay on the service, not in Playwright tests.
 
 ## Legacy rule-only mode
 

@@ -43,7 +43,7 @@ jobs:
         run: npm ci
 
       - name: Build workspace packages
-        run: npm run build:autonomous-agent
+        run: npm run build:autonomous-qa-sdk
 
       - name: Download maintenance artifacts (optional)
         uses: actions/download-artifact@v4
@@ -54,10 +54,10 @@ jobs:
 
       - name: Dry run — list approved proposals
         if: inputs.dry_run == 'true'
-        run: MAINTENANCE_PR_DRY_RUN=1 npm run maintenance:open-pr
+        run: MAINTENANCE_PR_DRY_RUN=1 npm run maintenance:open-pr --prefix examples/nova-retail-qa
 
       - name: Apply approved proposals and open draft PR
         if: inputs.open_pr == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: MAINTENANCE_OPEN_PR=1 npm run maintenance:open-pr
+        run: MAINTENANCE_OPEN_PR=1 npm run maintenance:open-pr --prefix examples/nova-retail-qa

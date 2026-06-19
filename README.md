@@ -1,183 +1,89 @@
-# Self-Healing Playwright Framework (Nova Retail)
+# agentic-platform (local monorepo)
 
-[![Playwright Tests](https://github.com/mmohan-bayone/SelfHealingPlaywrightFramework/actions/workflows/playwright.yml/badge.svg)](https://github.com/mmohan-bayone/SelfHealingPlaywrightFramework/actions/workflows/playwright.yml)
+**Single source of truth** for agentic test automation — develop here, publish slim slices to GitHub/npm.
 
-Self-healing Playwright tests for the Nova Retail login page: `https://retail-website-two.vercel.app/login`.
+| Layer | Packages |
+|-------|----------|
+| **Healing** | `ai-healing-core`, `ai-healing-agent`, `ai-healing-sdk`, `cypress`, `selenium`, `java` |
+| **Autonomous QA** | `autonomous-qa-sdk`, `autonomous-test-agent` |
+| **SaaS gateway** | `healing-service` (`POST /heal`, `POST /autonomous/plan`) |
+| **Reference app** | `examples/nova-retail-qa` |
 
-**How to use:** see [docs/How-To-Use-Agentic-Healing.md](docs/How-To-Use-Agentic-Healing.md) for step-by-step setup (SDK, service, LLM).
+**GitHub (publish targets):**
 
-## Purpose
+| Repo | Command |
+|------|---------|
+| [agentic-platform](https://github.com/mmohansqaai/agentic-platform) (full) | `npm run publish:agentic-platform-github` |
+| [agentic-healing-platform](https://github.com/mmohansqaai/agentic-healing-platform) (healing slice) | `npm run publish:healing-platform-github` |
+| [ai-healing-sdk](https://github.com/mmohansqaai/ai-healing-sdk) (npm SDK slice) | `npm run publish:healing-sdk-github` |
+| All slices | `npm run publish:all-slices-github` |
 
-- **Reduce flaky failures from locator changes** by trying multiple locator strategies (fallbacks) for the same element.
-- **Keep tests readable** by hiding healing logic behind page objects.
-- **Make debugging easy** by attaching healing details (winning strategy + failures) to the Playwright HTML report.
+**Docs:** [UAT test plan & usage steps](docs/UAT-Test-Plan-and-Usage.md) · [CTO / AI Director brief](docs/CTO-AI-Director-Agentic-Healing-Brief.md) · [Setup](docs/agentic-healing-setup.md)
 
-## How “healing” works (concept)
+---
 
-For each element (Email, Password, Sign in, etc.) we define an **ordered list** of strategies (locators).
-
-When an action runs (fill/click/wait):
-
-- Try strategy 1 → if it succeeds, stop.
-- If it fails, try strategy 2 → then strategy 3, etc.
-- If all fail, throw one error containing a summary of all failures.
-
-Healing implementation lives in `core/self-healing.ts` and is used by page objects like `pages/login.page.ts`.
-
-### Three discovery layers (auto-heal)
-
-1. **Static** — ordered `LocatorStrategy` chains in page objects (no DOM scan).
-2. **Seed rules** — `core/discovery/seed-discovery.ts` (hint-based candidates from failed attempts).
-3. **DOM scan** — `core/discovery/dom-scan-discovery.ts` (in-page inventory → synthesized locators → live `count()` validation).
-
-When `autoHeal.enabled` is true, strategies **2 + 3** run by default (merged by `core/discovery/compose-discoverers.ts`). Disable DOM scan with `AUTO_HEAL_DOM_SCAN=0` or `AUTO_HEAL_STRATEGIES=seed`.
-
-**Showcase tests** (silent login, toasts on Products): `@static-healing-showcase`, `@auto-heal-discovery-showcase` (seed only), `@dom-scan-healing-showcase` (DOM scan only). Run all: `npm run test:healing-showcases`.
-
-## Project structure
-
-- **`core/`**
-  - `self-healing.ts`: healing engine (`withHealingPage`) + helpers (`fillHealing`, `clickHealing`, `expectVisibleHealing`)
-  - `healing-types.ts`: `LocatorStrategy`, `HealingResult`
-  - `healing-reporter.ts`: attaches healing details to the HTML report
-  - `discovery/`: pluggable auto-heal strategies (`seed`, `dom-scan`) + composer
-- **`pages/`**
-  - `login.page.ts`: page object with locator strategy chains for the login page
-  - `retail-journey.page.ts`: self-healing flow for products → cart → checkout → order confirmation
-  - `admin-inventory.page.ts`: admin login destination `/app/admin`; per-row stock + Save; optional one-product seed if catalog is empty
-- **`tests/`**
-  - `fixtures.ts`: provides `loginPage`, `retailJourney`, and `adminInventory` fixtures
-  - `login.spec.ts`: page-load + demo customer login
-  - `checkout-flow.spec.ts`: end-to-end customer login through **complete checkout** (120s timeout)
-  - `admin-restock.spec.ts`: **admin** login (`admin@demo.com` / `admin123`), seed product if DB empty, **+50 stock** per catalog row with healing
-  - **`tests/traceability/`**: **Nova Retail–focused** TC matrix specs — **excluded from default runs** via `testIgnore` in `playwright.config.ts`. Run them with **`npm run test:traceability`** (sets `RUN_TRACEABILITY=1`) or `RUN_TRACEABILITY=1 npx playwright test`. Uses **`core/self-healing`**, **`strategies.ts`**, **`LoginPage`**, **`attachHealingSummary`**.
-- **`.github/workflows/`**
-  - `playwright.yml`: free GitHub Actions CI for running tests in headless Chromium
-
-## Setup
-
-### Prerequisites
-
-- Node.js **20+**
-- npm **9+** (comes with Node)
-
-### Install dependencies
+## Quick start
 
 ```bash
 npm install
+npm run build:healing-service
+npm run healing-service              # http://localhost:3921
+
+npm run test:plug-and-play           # minimal healing demo
+npm run install:nova-retail-qa
+npm run nova -- test:autonomous-login  # full autonomous
+npm run test:unit
 ```
 
-### Install Playwright browsers
+---
 
-```bash
-npm run install:browsers
+## Nova Retail reference app
+
+Self-healing + autonomous tests for Nova Retail: `examples/nova-retail-qa/`
+
+See [examples/nova-retail-qa/README.md](examples/nova-retail-qa/README.md) for traceability suite, maintenance scripts, and CI.
+
+**Legacy root tests** (`tests/`, `pages/`) remain for unit tests and traceability; primary app lives under `examples/nova-retail-qa/`.
+
+---
+
+## Healing (how it works)
+
+For each element we define an **ordered list** of locator strategies. On failure, the **agent loop** observes DOM, proposes candidates, validates, and retries.
+
+- **Local agent** — `ai-healing-agent` (no server required)
+- **Cloud agent** — `healing-service` + LLM (`HEALING_SERVICE_URL`)
+
+See [docs/How-To-Use-Agentic-Healing.md](docs/How-To-Use-Agentic-Healing.md).
+
+---
+
+## Project structure
+
+```
+packages/          ← publishable modules (healing + autonomous)
+agents/            ← locator, LLM, autonomous planner
+services/          ← healing-service (SaaS API)
+examples/          ← nova-retail-qa + plug-and-play
+core/              ← legacy healing engine (used by demos)
+docs/              ← setup, CTO brief, PRD
+scripts/           ← extract + publish to GitHub slices
 ```
 
-## Execute tests
+---
 
-### Run all tests (headless)
+## CI
 
-```bash
-npm test
-```
+- `.github/workflows/playwright.yml` — main test CI
+- `.github/workflows/autonomous-nightly.yml` — autonomous eval
+- Published `agentic-platform` repo includes consolidated `ci.yml`
 
-### Run in headed mode (visible browser)
-
-```bash
-npm run test:headed
-```
-
-### Run with Playwright UI mode
-
-```bash
-npm run test:ui
-```
-
-### Run a single spec file
-
-```bash
-npx playwright test tests/login.spec.ts
-```
-
-### Run a single test by title
-
-```bash
-npx playwright test -g "customer demo login"
-```
-
-### Run traceability suite (Nova Retail)
-
-Not included in `npm test` by default. Use:
-
-```bash
-npm run test:traceability
-```
-
-(`RUN_TRACEABILITY=1` enables those specs.)
-
-## Reports and artifacts
-
-- **HTML report**: generated at `playwright-report/`
-- **Test artifacts** (traces, screenshots, videos on retry): under `test-results/`
-
-Open the report locally:
-
-```bash
-npm run report
-```
-
-## Demo credentials used in tests
-
-The target login page displays demo users:
-
-- **Customer**: `test@demo.com` / `password123`
-- **Admin**: `admin@demo.com` / `admin123`
-
-## Configuration
-
-### Base URL
-
-The Playwright config uses:
-
-- default `BASE_URL`: `https://retail-website-two.vercel.app`
-- override with:
-
-```bash
-BASE_URL="https://retail-website-two.vercel.app" npm test
-```
-
-### Use system Chrome (optional)
-
-If you prefer using an installed Google Chrome instead of Playwright-downloaded Chromium:
-
-```bash
-PW_USE_SYSTEM_CHROME=1 npm test
-```
-
-## Free, open-source CI (GitHub Actions)
-
-This repo includes a workflow that runs on **push** and **pull requests**:
-
-- installs dependencies (`npm ci`)
-- installs Playwright Chromium + OS deps (`npx playwright install --with-deps chromium`)
-- runs tests (`npx playwright test`)
-- uploads `playwright-report/` as an artifact; uploads `test-results/` (traces/screenshots) when **present**—on an all-green run this folder may not exist, so the workflow uses `if-no-files-found: ignore` for that artifact
-- **Dashboard ingest:** set secret **`DASHBOARD_INGEST_TOKEN`**. After tests, CI runs **`node scripts/build-dashboard-payload.mjs`** → **`payload.json`**, zips **`playwright-report/`** → **`report.zip`**, then **`curl`** **`POST …/api/ingest/github-actions/run-with-report`** with **`-F "payload=@payload.json;type=application/json"`** and **`-F "report_zip=@report.zip;type=application/zip"`** (no JSON-only fallback). See **`docs/dashboard-ingest.md`**. **`continue-on-error: true`** on the publish step avoids blocking the job if the API is down. **Tests do not depend on the dashboard.**
-
-If `curl` shows **0 bytes** or always times out, the Render (or other) URL is not responding in time—check the Render dashboard, logs, and that the service is not suspended; raising timeouts alone will not fix a dead URL.
-
-Reporters are defined in `playwright.config.ts` (including JSON at `playwright-report/results.json`). **Do not** pass `--reporter=...` on the command line in CI unless you repeat the same `outputFile`, or that JSON file will not be created.
-
-Workflow file: `.github/workflows/playwright.yml`
-
-**Building the Real-Time Testing Dashboard API** (ingest contract, Render, GitHub): see [`docs/dashboard-ingest.md`](docs/dashboard-ingest.md).
+---
 
 ## Presentations
 
 | Asset | Command |
 |--------|---------|
-| **Technical deck** (stack, architecture, 3 strategies, dashboard) | `npm run deck:technical` → `docs/Self-Healing-Technical-Presentation.pptx` |
-| **Execution flow diagram** (purple/pink gradient) | [`docs/Self-Healing-Framework-Flow-Diagram.svg`](docs/Self-Healing-Framework-Flow-Diagram.svg) |
-| **Speaker notes** (what to say per slide) | [`docs/Self-Healing-Technical-Presentation-Speaker-Notes.md`](docs/Self-Healing-Technical-Presentation-Speaker-Notes.md) |
+| Agentic healing deck | `npm run deck:agentic` |
+| Technical deck | `npm run deck:technical` |
 | PM / executive deck | `npm run deck:pm` |
-

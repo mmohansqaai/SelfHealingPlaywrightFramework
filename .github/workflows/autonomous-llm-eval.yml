@@ -55,16 +55,16 @@ jobs:
         run: npm ci
 
       - name: Build workspace packages
-        run: npm run build:autonomous-agent
+        run: npm run install:nova-retail-qa
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
       - name: Run 10-journey evaluation
-        run: npm run test:autonomous-eval
+        run: npm run test:autonomous-eval --prefix examples/nova-retail-qa
 
       - name: Run held-out generalization eval
-        run: npm run test:autonomous-held-out
+        run: npm run test:autonomous-held-out --prefix examples/nova-retail-qa
         env:
           RUN_AUTONOMOUS_HELD_OUT: "1"
           AUTONOMOUS_HELD_OUT_MIN_RATE: "0.6"
@@ -74,5 +74,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: autonomous-eval-report
-          path: playwright-report/
+          path: examples/nova-retail-qa/playwright-report/
           retention-days: 14

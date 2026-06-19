@@ -36,23 +36,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build workspace packages
-        run: npm run build:autonomous-agent
-
       - name: Install Playwright browsers (with OS deps)
         run: npx playwright install --with-deps chromium
 
-      # Do not pass --reporter here: it overrides playwright.config.ts and drops
-      # json.outputFile, so playwright-report/results.json is never written.
-      - name: Run Playwright tests
-        run: npx playwright test --grep "@static-healing-showcase|@auto-heal-discovery-showcase|@dom-scan-healing-showcase"
+      - name: Run Playwright tests (healing SDK plug-and-play)
+        run: npm run test:plug-and-play:ci
 
       - name: Upload HTML report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
-          path: playwright-report/
+          path: examples/playwright-plug-and-play/playwright-report/
           retention-days: 7
 
       # test-results/ is gitignored. upload-artifact@v4 matches paths with gitignore rules, so a direct
@@ -106,14 +101,14 @@ jobs:
             echo "DASHBOARD_INGEST_TOKEN not set — skip dashboard ingest"
             exit 0
           fi
-          if [ ! -f playwright-report/results.json ] || [ ! -f playwright-report/index.html ]; then
+          if [ ! -f examples/playwright-plug-and-play/playwright-report/results.json ] || [ ! -f examples/playwright-plug-and-play/playwright-report/index.html ]; then
             echo "Missing playwright-report/results.json or index.html — skip dashboard ingest"
             exit 0
           fi
 
-          node scripts/build-dashboard-payload.mjs playwright-report/results.json payload.json
+          node scripts/build-dashboard-payload.mjs examples/playwright-plug-and-play/playwright-report/results.json payload.json
           node -e 'const fs=require("node:fs");const p=JSON.parse(fs.readFileSync("payload.json","utf8"));console.log(`[dashboard] payload summary: suite_name="${p.suite_name}", environment="${p.environment}", build_version="${p.build_version}", test_cases=${Array.isArray(p.test_cases)?p.test_cases.length:0}`)'
-          ( cd playwright-report && zip -qr ../report.zip . )
+          ( cd examples/playwright-plug-and-play/playwright-report && zip -qr ../../../report.zip . )
 
           URL="${DASHBOARD_URL}/api/ingest/github-actions/run-with-report"
           echo ""

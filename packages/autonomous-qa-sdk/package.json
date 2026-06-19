@@ -1,0 +1,46 @@
+{
+  "name": "autonomous-qa-sdk",
+  "version": "0.1.0",
+  "description": "Nova autonomous QA layer — goal-driven tests, maintenance agent, Jira/PR bots (uses ai-healing-sdk)",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "@playwright/test": ">=1.40.0"
+  },
+  "dependencies": {
+    "ai-healing-sdk": "file:../ai-healing-sdk",
+    "autonomous-agent-contracts": "file:../autonomous-agent-contracts",
+    "autonomous-test-agent": "file:../../agents/autonomous-test-agent"
+  },
+  "keywords": [
+    "playwright",
+    "autonomous-testing",
+    "nova",
+    "maintenance-agent",
+    "ai-healing"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.51.0",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}

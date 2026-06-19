@@ -15,9 +15,10 @@ import { formatLocatorQuery } from '../transport/contracts';
 import type { DiscovererFn } from '../transport/local-transport';
 import { createHttpDiscoverer, isHealingServiceEnabled } from '../transport/http-transport';
 import { createLocalDiscoverer } from '../transport/local-transport';
-import { buildHealingRequest } from './build-healing-request';
+import { buildHealingRequestFromDriver } from './build-healing-request';
 import { agentCandidatesToResponse, runAgentEngine } from './agent-engine';
 import { emitTelemetry } from '../telemetry/telemetry';
+import { createPlaywrightDriver } from '../driver/playwright-driver';
 
 export type AgentLoopOptions = {
   maxIterations?: number;
@@ -34,8 +35,8 @@ export type AgentLoopOptions = {
 
 async function scoreCandidateViability(page: Page, candidate: GeneratedLocatorCandidate): Promise<number> {
   try {
-    const loc = generatedQueryToLocatorFactory(candidate.query)(page).first();
-    const count = await loc.count();
+    const driver = createPlaywrightDriver(page);
+    const count = await driver.count(candidate.query);
     if (count < 1) return -1000;
     return count === 1 ? 10 : Math.max(0, 6 - count);
   } catch {
@@ -54,7 +55,8 @@ async function fetchAgentCandidatesRemote(
 ): Promise<{ candidates: GeneratedLocatorCandidate[]; traces: AgentTrace[] }> {
   const baseUrl = (options.healingServiceUrl ?? process.env.HEALING_SERVICE_URL ?? '').replace(/\/$/, '');
   const timeoutMs = Number(process.env.HEALING_SERVICE_TIMEOUT_MS || 8_000);
-  const request = await buildHealingRequest(page, actionType, attempts, {
+  const driver = createPlaywrightDriver(page);
+  const request = await buildHealingRequestFromDriver(driver, actionType, attempts, {
     agentContext: { iteration, maxIterations, agentMode: 'agentic', priorValidationResults: priorValidation },
     priorValidationResults: priorValidation,
   });
@@ -103,6 +105,7 @@ export async function runAgenticHealingLoop<T>(
   let lastError: unknown;
 
   const useRemote = Boolean(options.healingServiceUrl ?? isHealingServiceEnabled());
+  const driver = createPlaywrightDriver(page);
 
   for (let iteration = 0; iteration < maxIterations; iteration++) {
     emitTelemetry(
@@ -127,7 +130,7 @@ export async function runAgenticHealingLoop<T>(
       rawCandidates = remote.candidates;
       allTraces.push(...remote.traces);
     } else {
-      const request = await buildHealingRequest(page, actionType, attempts, {
+      const request = await buildHealingRequestFromDriver(driver, actionType, attempts, {
         agentContext: { iteration, maxIterations, agentMode: 'agentic', priorValidationResults: priorValidation },
         priorValidationResults: priorValidation,
       });
@@ -167,7 +170,7 @@ export async function runAgenticHealingLoop<T>(
           reason: candidate.reason,
           query: candidate.query,
         });
-        recordHistoryOutcome(page.url(), actionType, generatedQueryKey(candidate.query), true);
+        recordHistoryOutcome(driver.url(), actionType, generatedQueryKey(candidate.query), true);
 
         const result: HealingResult<T> = {
           value,
@@ -222,7 +225,7 @@ export async function runAgenticHealingLoop<T>(
           query: candidate.query,
         });
         priorValidation.push({ healedLocator, ok: false, error: errorMsg });
-        recordHistoryOutcome(page.url(), actionType, generatedQueryKey(candidate.query), false);
+        recordHistoryOutcome(driver.url(), actionType, generatedQueryKey(candidate.query), false);
       }
     }
 
@@ -245,7 +248,7 @@ export async function runAgenticHealingLoop<T>(
 /** DiscovererFn adapter — single agent iteration for legacy discoverer injection points. */
 export function createAgentDiscoverer(options?: AgentLoopOptions): DiscovererFn {
   return async ({ page, actionType, attempts }) => {
-    const request = await buildHealingRequest(page, actionType, attempts, {
+    const request = await buildHealingRequestFromDriver(createPlaywrightDriver(page), actionType, attempts, {
       agentContext: { iteration: 0, maxIterations: 1, agentMode: 'agentic' },
     });
     const engine = await runAgentEngine({

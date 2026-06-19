@@ -13,11 +13,16 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "LICENSE",
+    "STANDALONE-REPO.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "ai-healing-core": "file:../ai-healing-core"
   },
   "peerDependencies": {
     "@playwright/test": ">=1.40.0"
@@ -26,10 +31,6 @@
     "@playwright/test": {
       "optional": false
     }
-  },
-  "dependencies": {
-    "autonomous-agent-contracts": "file:../autonomous-agent-contracts",
-    "autonomous-test-agent": "file:../../agents/autonomous-test-agent"
   },
   "keywords": [
     "playwright",
