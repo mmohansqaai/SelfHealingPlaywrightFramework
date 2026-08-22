@@ -12,7 +12,7 @@
     "ai-healing-sdk": "file:../../packages/ai-healing-sdk"
   },
   "devDependencies": {
-    "@playwright/test": "^1.51.0",
+    "@playwright/test": "file:../../node_modules/@playwright/test",
     "@types/node": "^22.10.0",
     "typescript": "^5.7.0"
   }

@@ -84,6 +84,7 @@ scripts/           ← extract + publish to GitHub slices
 
 | Asset | Command |
 |--------|---------|
+| **Capability + walkthrough** (agentic deep dive) | `npm run deck:capability` |
 | Agentic healing deck | `npm run deck:agentic` |
 | Technical deck | `npm run deck:technical` |
 | PM / executive deck | `npm run deck:pm` |

@@ -8,5 +8,7 @@ autonomous-review/
 maintenance-output/
 .maintenance-failures.json
 .maintenance-jira-published.json
+.self-healing-history.json
+**/.self-healing-history.json
 *.tgz
 .DS_Store

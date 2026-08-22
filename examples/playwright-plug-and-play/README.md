@@ -14,6 +14,14 @@ From monorepo root:
 npm run install:plug-and-play-demo
 ```
 
+## Tests
+
+| Test | Purpose |
+|------|---------|
+| `healable API — customer login` | End-to-end login with correct locators |
+| `healable API — recovers broken email locator @healing-demo` | Intentionally broken selector; asserts auto-heal |
+| `strategy API — same login via clickHealing/fillHealing` | Page-object style strategy chains |
+
 ## Tier 1 — SDK agentic (in-process, no server)
 
 ```bash

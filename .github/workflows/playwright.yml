@@ -20,6 +20,9 @@ jobs:
     env:
       CI: "true"
       BASE_URL: "https://retail-website-fawn.vercel.app"
+      AUTO_HEAL_DISCOVER: "1"
+      HEALING_AGENT_MODE: "agentic"
+      PW_USE_SYSTEM_CHROME: "0"
       # Keep showcase run green; demo failure injection disabled.
       DEMO_DASHBOARD_FAILURES: "0"
 
@@ -39,6 +42,27 @@ jobs:
       - name: Install Playwright browsers (with OS deps)
         run: npx playwright install --with-deps chromium
 
+      - name: Build and start healing-service (unit tests)
+        env:
+          HEALING_LLM_PROVIDER: mock
+        run: |
+          npm run build:healing-service
+          npm run start -w healing-service &
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3921/health >/dev/null; then
+              echo "healing-service ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "healing-service failed to start"
+          exit 1
+
+      - name: Run unit tests (healing stack)
+        env:
+          HEALING_SERVICE_URL: http://localhost:3921
+        run: npm run test:unit
+
       - name: Run Playwright tests (healing SDK plug-and-play)
         run: npm run test:plug-and-play:ci
 
@@ -57,8 +81,9 @@ jobs:
         if: always()
         run: |
           rm -f test-results-upload.zip
-          if find test-results -type f -print -quit 2>/dev/null | grep -q .; then
-            ( cd test-results && zip -qr ../test-results-upload.zip . )
+          TR_DIR="examples/playwright-plug-and-play/test-results"
+          if find "$TR_DIR" -type f -print -quit 2>/dev/null | grep -q .; then
+            ( cd "$TR_DIR" && zip -qr ../../../test-results-upload.zip . )
             echo "has_artifacts=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_artifacts=false" >> "$GITHUB_OUTPUT"
