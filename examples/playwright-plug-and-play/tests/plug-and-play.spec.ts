@@ -2,7 +2,7 @@
  * Standalone plug-and-play demo — imports ai-healing-sdk as an external npm package.
  * No dependency on the parent framework's core/ folder.
  */
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import {
   attachHealingSummary,
   clickHealing,
@@ -11,6 +11,10 @@ import {
   healable,
   type LocatorStrategy,
 } from 'ai-healing-sdk';
+
+async function expectLeftLoginPage(page: Page): Promise<void> {
+  await expect(page).not.toHaveURL(/\/login\/?$/, { timeout: 20_000 });
+}
 
 test.describe('ai-healing-sdk plug-and-play @plug-and-play', () => {
   test.beforeEach(async ({ page }) => {
@@ -23,8 +27,8 @@ test.describe('ai-healing-sdk plug-and-play @plug-and-play', () => {
     });
   });
 
-  test('healable API — customer login', async ({ page }, testInfo) => {
-    await page.goto('/login');
+  test('healable API — customer login @live-login', async ({ page }, testInfo) => {
+    await page.goto('/login', { waitUntil: 'domcontentloaded' });
 
     const email = await healable.fill(page.getByLabel(/email/i), 'test@demo.com');
     await attachHealingSummary(testInfo, 'healable-email', email);
@@ -35,11 +39,11 @@ test.describe('ai-healing-sdk plug-and-play @plug-and-play', () => {
     const submit = await healable.click(page.getByRole('button', { name: /sign in/i }));
     await attachHealingSummary(testInfo, 'healable-submit', submit);
 
-    await expect(page).not.toHaveURL(/\/login\/?$/);
+    await expectLeftLoginPage(page);
   });
 
   test('healable API — recovers broken email locator @healing-demo', async ({ page }, testInfo) => {
-    await page.goto('/login');
+    await page.goto('/login', { waitUntil: 'domcontentloaded' });
 
     const email = await healable.fill(page.locator('#email-does-not-exist'), 'test@demo.com');
     await attachHealingSummary(testInfo, 'healable-email-healing', email);
@@ -48,8 +52,8 @@ test.describe('ai-healing-sdk plug-and-play @plug-and-play', () => {
     expect(email.usedStrategy).not.toBe('primary-locator');
   });
 
-  test('strategy API — same login via clickHealing/fillHealing', async ({ page }, testInfo) => {
-    await page.goto('/login');
+  test('strategy API — same login via clickHealing/fillHealing @live-login', async ({ page }, testInfo) => {
+    await page.goto('/login', { waitUntil: 'domcontentloaded' });
 
     const emailStrategies: LocatorStrategy[] = [
       { name: 'label-email', resolve: (p) => p.getByLabel(/email/i) },
@@ -76,6 +80,6 @@ test.describe('ai-healing-sdk plug-and-play @plug-and-play', () => {
     );
     await attachHealingSummary(testInfo, 'strategy-submit', submit);
 
-    await expect(page).not.toHaveURL(/\/login\/?$/);
+    await expectLeftLoginPage(page);
   });
 });

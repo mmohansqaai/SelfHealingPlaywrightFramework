@@ -33,7 +33,7 @@
     "build:autonomous-contracts": "npm run build -w autonomous-agent-contracts",
     "build:autonomous-test-agent": "npm run build:autonomous-contracts && npm run build -w autonomous-test-agent",
     "build:llm-locator-agent": "npm run build:sdk && npm run build -w llm-provider && npm run build -w locator-agent && npm run build -w llm-locator-agent",
-    "build:healing-service": "npm run build:llm-locator-agent && npm run build -w healing-service",
+    "build:healing-service": "npm run build:llm-locator-agent && npm run build:autonomous-test-agent && npm run build -w healing-service",
     "nova": "npm run --prefix examples/nova-retail-qa",
     "test:locator-agent-phase3": "HEALING_SERVICE_URL=http://localhost:3921 AUTO_HEAL_DISCOVER=1 playwright test --config=playwright.phase3.config.ts --headed",
     "healing-service": "npm run build:healing-service && npm run start -w healing-service",
