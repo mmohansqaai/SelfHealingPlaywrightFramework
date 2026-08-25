@@ -15,7 +15,7 @@ jobs:
   test:
     name: Run tests (Ubuntu)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
 
     env:
       CI: "true"
@@ -67,6 +67,23 @@ jobs:
       - name: Run healing demo (must prove auto-heal)
         run: npm run install:plug-and-play-demo && npm test --prefix examples/playwright-plug-and-play -- --grep @healing-demo
 
+      # Snapshot healing report before live-login overwrites playwright-report/.
+      - name: Keep healing-demo report for dashboard
+        if: always()
+        run: |
+          set -euo pipefail
+          SRC=examples/playwright-plug-and-play/playwright-report
+          DEST=examples/playwright-plug-and-play/dashboard-report
+          rm -rf "$DEST"
+          mkdir -p "$DEST"
+          if [ -f "$SRC/results.json" ] && [ -f "$SRC/index.html" ]; then
+            cp -a "$SRC"/. "$DEST"/
+            echo "Saved healing-demo HTML report for dashboard ingest"
+          else
+            echo "Healing-demo report missing — dashboard ingest will fail"
+            exit 1
+          fi
+
       # Live Vercel login can flake independently of healing; do not block CI green.
       - name: Run live login demos (non-blocking)
         continue-on-error: true
@@ -103,110 +120,13 @@ jobs:
           path: test-results-upload.zip
           retention-days: 7
 
-      - name: Warm dashboard API (Render cold start)
+      - name: Publish results to dashboard (Action logs)
         if: always()
-        continue-on-error: true
-        env:
-          DASHBOARD_URL: https://realtime-testing-dashboard-api-ld7t.onrender.com
-        run: |
-          echo "GET $DASHBOARD_URL/api/health (wake sleeping instance)"
-          curl -sS -w "\nHTTP %{http_code}\n" --connect-timeout 10 --max-time 120 "$DASHBOARD_URL/api/health" || true
-
-      # One HTTP call: multipart with payload (JSON file) + report_zip (zip). No Node fetch / no fallback to /run.
-      - name: Publish results to dashboard (multipart curl)
-        if: always()
-        continue-on-error: true
         env:
           DASHBOARD_URL: https://realtime-testing-dashboard-api-ld7t.onrender.com
           DASHBOARD_INGEST_TOKEN: ${{ secrets.DASHBOARD_INGEST_TOKEN }}
           SUITE_NAME: SelfHealing Playwright
           ENVIRONMENT: CI
           BUILD_VERSION: ${{ github.sha }}
-          DASHBOARD_MAX_TIME_SEC: "300"
-          DASHBOARD_POST_RETRIES: "4"
-          DASHBOARD_POST_RETRY_DELAY_SEC: "8"
-        run: |
-          set -uo pipefail
-          DASHBOARD_URL="${DASHBOARD_URL%/}"
-          if [ -z "${DASHBOARD_INGEST_TOKEN:-}" ]; then
-            echo "DASHBOARD_INGEST_TOKEN not set — skip dashboard ingest"
-            exit 0
-          fi
-          if [ ! -f examples/playwright-plug-and-play/playwright-report/results.json ] || [ ! -f examples/playwright-plug-and-play/playwright-report/index.html ]; then
-            echo "Missing playwright-report/results.json or index.html — skip dashboard ingest"
-            exit 0
-          fi
-
-          node scripts/build-dashboard-payload.mjs examples/playwright-plug-and-play/playwright-report/results.json payload.json
-          node -e 'const fs=require("node:fs");const p=JSON.parse(fs.readFileSync("payload.json","utf8"));console.log(`[dashboard] payload summary: suite_name="${p.suite_name}", environment="${p.environment}", build_version="${p.build_version}", test_cases=${Array.isArray(p.test_cases)?p.test_cases.length:0}`)'
-          ( cd examples/playwright-plug-and-play/playwright-report && zip -qr ../../../report.zip . )
-
-          URL="${DASHBOARD_URL}/api/ingest/github-actions/run-with-report"
-          echo ""
-          echo "========== Dashboard ingest (check this log) =========="
-          echo "POST ${URL}"
-          echo "Parts: -F \"payload=@payload.json;type=application/json\" -F \"report_zip=@report.zip;type=application/zip\""
-          echo "curl equivalent (token redacted):"
-          echo "  curl -f -sS -X POST \"${URL}\" -H \"X-Ingest-Token: ***\" \\"
-          echo "    -F \"payload=@payload.json;type=application/json\" \\"
-          echo "    -F \"report_zip=@report.zip;type=application/zip\""
-          echo "========================================================"
-
-          MAXT="${DASHBOARD_MAX_TIME_SEC:-300}"
-          RETRIES="${DASHBOARD_POST_RETRIES:-4}"
-          DELAY="${DASHBOARD_POST_RETRY_DELAY_SEC:-8}"
-          HDR=$(mktemp)
-          BODY=$(mktemp)
-          cleanup() { rm -f "$HDR" "$BODY"; }
-          trap cleanup EXIT
-
-          attempt=1
-          while [ "$attempt" -le "$RETRIES" ]; do
-            echo "[dashboard] curl attempt ${attempt}/${RETRIES}"
-            set +e
-            HTTP_CODE="$(curl --http1.1 -sS --max-time "$MAXT" -X POST "$URL" \
-              -H "X-Ingest-Token: ${DASHBOARD_INGEST_TOKEN}" \
-              -D "$HDR" -o "$BODY" \
-              -F "payload=@payload.json;type=application/json" \
-              -F "report_zip=@report.zip;type=application/zip" \
-              -w '%{http_code}')"
-            CURL_EXIT=$?
-            set -e
-            if [ "$CURL_EXIT" -eq 0 ] && [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-              echo ""
-              echo "--- Response headers ---"
-              cat "$HDR"
-              echo "--- Response body ---"
-              cat "$BODY"
-              echo ""
-              if grep -qiE '^x-ingest-report-zip-bytes:' "$HDR" || grep -qiE '^X-Ingest-Report-Zip-Bytes:' "$HDR"; then
-                echo "[dashboard] X-Ingest-Report-Zip-Bytes present (see headers above; expect > 0 when zip stored)"
-              fi
-              if grep -q '"has_html_report_zip"[[:space:]]*:[[:space:]]*true' "$BODY" 2>/dev/null; then
-                echo '[dashboard] OK: response body contains "has_html_report_zip": true'
-              else
-                echo "[dashboard] WARN: confirm JSON body includes has_html_report_zip: true"
-              fi
-              exit 0
-            fi
-            echo "[dashboard] curl failed (exit ${CURL_EXIT}, http ${HTTP_CODE})"
-            if [ -s "$HDR" ]; then
-              echo "--- Failed response headers ---"
-              cat "$HDR"
-            fi
-            if [ -s "$BODY" ]; then
-              echo "--- Failed response body ---"
-              cat "$BODY"
-            fi
-            if [ "$HTTP_CODE" = "502" ]; then
-              echo "[dashboard] WARN: upstream returned 502 (Render/edge unavailable). Skipping remaining retries."
-              break
-            fi
-            if [ "$attempt" -lt "$RETRIES" ]; then
-              sleep "$DELAY"
-            fi
-            attempt=$((attempt + 1))
-          done
-          echo "[dashboard] All curl attempts failed"
-          echo "[dashboard] WARN: continuing workflow despite ingest failure"
-          exit 0
+          REPORT_DIR: examples/playwright-plug-and-play/dashboard-report
+        run: bash scripts/ci-dashboard-ingest.sh

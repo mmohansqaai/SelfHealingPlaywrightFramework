@@ -1,0 +1,37 @@
+# Keep Render dashboard API awake so CI ingest (Action logs) does not hang on cold start.
+name: Dashboard API keepalive
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    name: Ping dashboard health
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: GET /api/health
+        env:
+          DASHBOARD_URL: https://realtime-testing-dashboard-api-ld7t.onrender.com
+        run: |
+          set -euo pipefail
+          URL="${DASHBOARD_URL%/}/api/health"
+          echo "GET ${URL}"
+          for i in 1 2 3 4 5 6; do
+            set +e
+            CODE="$(curl --http1.1 -sS -o /tmp/health.body -w '%{http_code}' \
+              --connect-timeout 10 --max-time 45 "${URL}")"
+            EXIT=$?
+            set -e
+            echo "attempt ${i}: curl_exit=${EXIT} http=${CODE}"
+            if [ "${EXIT}" -eq 0 ] && [ "${CODE}" -ge 200 ] && [ "${CODE}" -lt 300 ]; then
+              cat /tmp/health.body || true
+              echo
+              exit 0
+            fi
+            sleep 8
+          done
+          echo "Keepalive could not wake API this cycle (Render may still be spinning up)."
+          exit 0

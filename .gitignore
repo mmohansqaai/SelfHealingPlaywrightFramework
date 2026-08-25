@@ -12,3 +12,6 @@ maintenance-output/
 **/.self-healing-history.json
 *.tgz
 .DS_Store
+payload.json
+report.zip
+examples/playwright-plug-and-play/dashboard-report/

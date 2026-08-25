@@ -95,8 +95,9 @@ So: **making ingest “work” is mostly making the API process reachable and re
 ### Path A — Keep free tier (expect flaky cold starts)
 
 - Accept that **first request after idle may be very slow**.
-- In GitHub: set repository variable **`DASHBOARD_INGEST_IN_CI=true`** and secret **`DASHBOARD_INGEST_TOKEN`**.
-- Optionally add a **cron job** (Render Cron Jobs or external ping) every **10–14 minutes** to `GET https://your-api.onrender.com/health` so the instance stays warmer (still not guaranteed on free tier).
+- This repo pings `GET /api/health` every **10 minutes** (`.github/workflows/dashboard-keepalive.yml`) to reduce sleep.
+- CI **does not POST the zip until health returns 2xx**, then uploads a smaller HTML zip (traces excluded).
+- Ingest **fails the Playwright job** if the dashboard never receives the report (Action logs would be missing).
 
 ### Path B — Reliable CI (recommended for a “real-time” product)
 
