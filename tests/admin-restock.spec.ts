@@ -5,6 +5,7 @@ test.describe('Admin inventory (self-healing)', () => {
   test('admin logs in and increases each product stock by 50', async ({ page, loginPage: login, adminInventory: admin }, testInfo) => {
     test.setTimeout(120_000);
 
+    console.log('login.goto');
     await login.goto();
     await login.expectLoaded();
 
