@@ -76,7 +76,7 @@ jobs:
         if: always()
         continue-on-error: true
         env:
-          DASHBOARD_URL: https://realtime-testing-dashboard-api-ld7t.onrender.com
+          DASHBOARD_URL: https://realtime-testing-dashboard.onrender.com
         run: |
           echo "GET $DASHBOARD_URL/api/health (wake sleeping instance)"
           curl -sS -w "\nHTTP %{http_code}\n" --connect-timeout 10 --max-time 120 "$DASHBOARD_URL/api/health" || true
@@ -86,7 +86,7 @@ jobs:
         if: always()
         continue-on-error: true
         env:
-          DASHBOARD_URL: https://realtime-testing-dashboard-api-ld7t.onrender.com
+          DASHBOARD_URL: https://realtime-testing-dashboard.onrender.com
           DASHBOARD_INGEST_TOKEN: ${{ secrets.DASHBOARD_INGEST_TOKEN }}
           SUITE_NAME: SelfHealing Playwright
           ENVIRONMENT: CI
@@ -113,24 +113,34 @@ jobs:
 
           ZIP_BYTES=$(wc -c < report.zip | tr -d ' ')
           echo "[dashboard] report.zip size=${ZIP_BYTES} bytes"
+          echo "[dashboard] DASHBOARD_URL=${DASHBOARD_URL}"
           URL="${DASHBOARD_URL}/api/ingest/github-actions/run-with-report"
           JSON_URL="${DASHBOARD_URL}/api/ingest/github-actions/run"
           echo ""
           echo "========== Dashboard ingest (check this log) =========="
-          echo "POST ${URL}"
+          echo "POST ${JSON_URL} then ${URL}"
           echo "========================================================"
 
+          echo "[dashboard] Waiting for API health..."
+          for i in 1 2 3 4 5 6; do
+            set +e
+            HEALTH=$(curl -4 --http1.1 -sS --connect-timeout 15 --max-time 60 -o /dev/null -w '%{http_code}' "${DASHBOARD_URL}/api/health")
+            set -e
+            echo "[dashboard] health attempt ${i}: HTTP ${HEALTH}"
+            if [ "$HEALTH" = "200" ]; then
+              break
+            fi
+            sleep 8
+          done
+
           MAXT="${DASHBOARD_MAX_TIME_SEC:-90}"
-          RETRIES="${DASHBOARD_POST_RETRIES:-3}"
-          DELAY="${DASHBOARD_POST_RETRY_DELAY_SEC:-5}"
           HDR=$(mktemp)
           BODY=$(mktemp)
           cleanup() { rm -f "$HDR" "$BODY"; }
           trap cleanup EXIT
 
           post_zip() {
-            # Expect: empty disables 100-continue, which hangs on Render/Cloudflare.
-            curl --http1.1 -sS --connect-timeout 20 --max-time "$MAXT" \
+            curl -4 --http1.1 -sS --connect-timeout 20 --max-time "$MAXT" \
               -H "Expect:" \
               -H "X-Ingest-Token: ${DASHBOARD_INGEST_TOKEN}" \
               -X POST "$URL" \
@@ -141,7 +151,7 @@ jobs:
           }
 
           post_json() {
-            curl --http1.1 -sS --connect-timeout 20 --max-time 45 \
+            curl -4 --http1.1 -sS --connect-timeout 20 --max-time 60 \
               -H "Expect:" \
               -H "Content-Type: application/json" \
               -H "X-Ingest-Token: ${DASHBOARD_INGEST_TOKEN}" \
@@ -151,37 +161,7 @@ jobs:
               -w '%{http_code}'
           }
 
-          attempt=1
-          while [ "$attempt" -le "$RETRIES" ]; do
-            echo "[dashboard] curl attempt ${attempt}/${RETRIES} (multipart zip)"
-            set +e
-            HTTP_CODE="$(post_zip)"
-            CURL_EXIT=$?
-            set -e
-            if [ "$CURL_EXIT" -eq 0 ] && [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-              echo ""
-              echo "--- Response headers ---"
-              cat "$HDR"
-              echo "--- Response body ---"
-              cat "$BODY"
-              echo ""
-              if grep -q '"has_html_report_zip"[[:space:]]*:[[:space:]]*true' "$BODY" 2>/dev/null; then
-                echo '[dashboard] OK: has_html_report_zip=true'
-              else
-                echo "[dashboard] WARN: confirm JSON body includes has_html_report_zip: true"
-              fi
-              exit 0
-            fi
-            echo "[dashboard] curl failed (exit ${CURL_EXIT}, http ${HTTP_CODE})"
-            if [ -s "$HDR" ]; then echo "--- Failed response headers ---"; cat "$HDR"; fi
-            if [ -s "$BODY" ]; then echo "--- Failed response body ---"; cat "$BODY"; fi
-            if [ "$attempt" -lt "$RETRIES" ]; then
-              sleep "$DELAY"
-            fi
-            attempt=$((attempt + 1))
-          done
-
-          echo "[dashboard] Zip ingest failed — falling back to JSON-only (KPIs, no HTML zip)"
+          echo "[dashboard] POST JSON (KPIs)"
           set +e
           HTTP_CODE="$(post_json)"
           CURL_EXIT=$?
@@ -189,8 +169,23 @@ jobs:
           if [ "$CURL_EXIT" -eq 0 ] && [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
             echo "[dashboard] JSON ingest OK (http ${HTTP_CODE})"
             cat "$BODY"
+          else
+            echo "[dashboard] JSON ingest failed (exit ${CURL_EXIT}, http ${HTTP_CODE})"
+            if [ -s "$HDR" ]; then cat "$HDR"; fi
+            if [ -s "$BODY" ]; then cat "$BODY"; fi
+            echo "[dashboard] WARN: continuing workflow despite ingest failure"
             exit 0
           fi
-          echo "[dashboard] JSON ingest also failed (exit ${CURL_EXIT}, http ${HTTP_CODE})"
-          echo "[dashboard] WARN: continuing workflow despite ingest failure"
+
+          echo "[dashboard] POST zip (HTML report)"
+          set +e
+          HTTP_CODE="$(post_zip)"
+          CURL_EXIT=$?
+          set -e
+          if [ "$CURL_EXIT" -eq 0 ] && [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+            echo "[dashboard] Zip ingest OK (http ${HTTP_CODE})"
+            cat "$BODY"
+            exit 0
+          fi
+          echo "[dashboard] Zip ingest failed (KPIs already posted). exit ${CURL_EXIT} http ${HTTP_CODE}"
           exit 0
