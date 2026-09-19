@@ -18,7 +18,7 @@ jobs:
     env:
       CI: "true"
       BASE_URL: "https://retail-website-fawn.vercel.app"
-      # Keep showcase run green; demo failure injection disabled.
+      # Showcase tests stay green. @triage-demo-failure is a separate intentional fail.
       DEMO_DASHBOARD_FAILURES: "0"
       # Must match the API behind https://realtime-unified-dashboard.vercel.app
       DASHBOARD_URL: https://realtime-unified-dashboard-api.onrender.com
@@ -42,7 +42,7 @@ jobs:
       # Do not pass --reporter here: it overrides playwright.config.ts and drops
       # json.outputFile, so playwright-report/results.json is never written.
       - name: Run Playwright tests
-        run: npx playwright test --grep "@static-healing-showcase|@auto-heal-discovery-showcase|@dom-scan-healing-showcase"
+        run: npx playwright test --grep "@static-healing-showcase|@auto-heal-discovery-showcase|@dom-scan-healing-showcase|@triage-demo-failure"
 
       - name: Upload HTML report
         if: always()
