@@ -20,6 +20,8 @@ jobs:
       BASE_URL: "https://retail-website-fawn.vercel.app"
       # Keep showcase run green; demo failure injection disabled.
       DEMO_DASHBOARD_FAILURES: "0"
+      # Must match the API behind https://realtime-unified-dashboard.vercel.app
+      DASHBOARD_URL: https://realtime-unified-dashboard-api.onrender.com
 
     steps:
       - name: Checkout
@@ -72,21 +74,25 @@ jobs:
           path: test-results-upload.zip
           retention-days: 7
 
+      # One long GET. Repeated 60s curls abort Render's spin-up and leave the edge
+      # holding TLS with 0 HTTP bytes (CI log: curl 28 / http 000).
       - name: Warm dashboard API (Render cold start)
         if: always()
         continue-on-error: true
-        env:
-          DASHBOARD_URL: https://realtime-testing-dashboard.onrender.com
         run: |
-          echo "GET $DASHBOARD_URL/api/health (wake sleeping instance)"
-          curl -sS -w "\nHTTP %{http_code}\n" --connect-timeout 10 --max-time 120 "$DASHBOARD_URL/api/health" || true
+          set +e
+          echo "GET $DASHBOARD_URL/api/health (single request, wait for origin)"
+          curl -4 --http1.1 -sS --connect-timeout 20 --max-time 180 \
+            -w "\n[dashboard] wake http=%{http_code} time=%{time_total}s connect=%{time_connect}s starttransfer=%{time_starttransfer}s bytes=%{size_download}\n" \
+            "$DASHBOARD_URL/api/health"
+          echo "[dashboard] wake curl exit=$?"
+          set -e
 
       # One HTTP call: multipart with payload (JSON file) + report_zip (zip). No Node fetch / no fallback to /run.
       - name: Publish results to dashboard (multipart curl)
         if: always()
         continue-on-error: true
         env:
-          DASHBOARD_URL: https://realtime-testing-dashboard.onrender.com
           DASHBOARD_INGEST_TOKEN: ${{ secrets.DASHBOARD_INGEST_TOKEN }}
           SUITE_NAME: SelfHealing Playwright
           ENVIRONMENT: CI
@@ -121,17 +127,19 @@ jobs:
           echo "POST ${JSON_URL} then ${URL}"
           echo "========================================================"
 
-          echo "[dashboard] Waiting for API health..."
-          for i in 1 2 3 4 5 6; do
-            set +e
-            HEALTH=$(curl -4 --http1.1 -sS --connect-timeout 15 --max-time 60 -o /dev/null -w '%{http_code}' "${DASHBOARD_URL}/api/health")
-            set -e
-            echo "[dashboard] health attempt ${i}: HTTP ${HEALTH}"
-            if [ "$HEALTH" = "200" ]; then
-              break
-            fi
-            sleep 8
-          done
+          echo "[dashboard] Confirm API is awake (do not abort a cold start with short retries)"
+          set +e
+          HEALTH=$(curl -4 --http1.1 -sS --connect-timeout 20 --max-time 180 \
+            -o /dev/null -w '%{http_code}' "${DASHBOARD_URL}/api/health")
+          HEALTH_EXIT=$?
+          set -e
+          echo "[dashboard] health HTTP ${HEALTH} curl_exit=${HEALTH_EXIT}"
+          if [ "$HEALTH_EXIT" -ne 0 ] || [ "$HEALTH" != "200" ]; then
+            echo "[dashboard] SKIP ingest: origin never returned HTTP 200."
+            echo "[dashboard] Render is still on the loading/spinner page (TLS up, 0 response bytes)."
+            echo "[dashboard] Fix on Render: service logs, crash loop, bind PORT, paid/always-on, or confirm this host is the API not a sleeping UI."
+            exit 0
+          fi
 
           MAXT="${DASHBOARD_MAX_TIME_SEC:-90}"
           HDR=$(mktemp)

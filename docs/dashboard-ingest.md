@@ -130,7 +130,7 @@ If you only see **metrics** and no zip in the dashboard, confirm the log shows *
 ## 6. Local smoke test (before relying on CI)
 
 ```bash
-export DASHBOARD_URL=https://realtime-testing-dashboard-api.onrender.com
+export DASHBOARD_URL=https://realtime-unified-dashboard-api.onrender.com
 export DASHBOARD_INGEST_TOKEN=your-token
 npm test   # playwright-report/results.json + HTML report
 
