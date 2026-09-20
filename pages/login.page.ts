@@ -69,16 +69,29 @@ export class LoginPage {
   private headingStrategies(): LocatorStrategy[] {
     return [
       {
+        name: 'text-BayOne-Retail',
+        resolve: (p) => p.getByText(/bayone retail/i).first(),
+      },
+      {
+        name: 'rw-title-brand',
+        resolve: (p) => p.locator('.rw-title').first(),
+      },
+      {
+        name: 'subtitle-demo-sign-in',
+        resolve: (p) => p.getByText(/demo sign-in for testing only/i).first(),
+      },
+      {
+        name: 'demo-disclaimer-banner',
+        resolve: (p) =>
+          p.getByText(/demo website for testing purposes only/i).first(),
+      },
+      {
         name: 'heading-sign-in-workspace',
         resolve: (p) => p.getByRole('heading', { name: /sign in to your workspace/i }),
       },
       {
-        name: 'text-sign-in-workspace',
-        resolve: (p) => p.getByText(/sign in to your workspace/i).first(),
-      },
-      {
         name: 'text-Nova-Retail',
-        resolve: (p) => p.getByText('Nova Retail').first(),
+        resolve: (p) => p.getByText(/nova retail/i).first(),
       },
     ];
   }

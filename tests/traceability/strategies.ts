@@ -117,8 +117,11 @@ export function continueShoppingStrategies(): LocatorStrategy[] {
 
 export function novaRetailHeadingStrategies(): LocatorStrategy[] {
   return [
+    { name: 'text-BayOne-Retail', resolve: (p) => p.getByText(/bayone retail/i).first() },
+    { name: 'rw-title-brand', resolve: (p) => p.locator('.rw-title').first() },
+    { name: 'demo-disclaimer-banner', resolve: (p) => p.getByText(/demo website for testing purposes only/i).first() },
     { name: 'text-Nova-Retail', resolve: (p) => p.getByText(/nova retail/i).first() },
-    { name: 'heading-Nova', resolve: (p) => p.getByRole('heading').filter({ hasText: /nova/i }).first() },
+    { name: 'heading-Nova', resolve: (p) => p.getByRole('heading').filter({ hasText: /nova|bayone/i }).first() },
   ];
 }
 

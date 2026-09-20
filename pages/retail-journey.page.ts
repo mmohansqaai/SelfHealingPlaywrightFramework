@@ -18,6 +18,7 @@ export class RetailJourneyPage {
     return [
       { name: 'heading-Products', resolve: (p) => p.getByRole('heading', { name: /^(Products|Catalog)$/ }) },
       { name: 'eyebrow-Storefront', resolve: (p) => p.getByText('Storefront').first() },
+      { name: 'brand-BayOne-Retail', resolve: (p) => p.getByText(/bayone retail/i).first() },
       { name: 'placeholder-search', resolve: (p) => p.getByPlaceholder(/search products/i) },
     ];
   }
