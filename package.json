@@ -24,7 +24,7 @@
     "deck:pm": "node scripts/generate-pm-presentation-deck.mjs"
   },
   "devDependencies": {
-    "@playwright/test": "^1.51.0",
+    "@playwright/test": "^1.65.1",
     "@types/node": "^22.10.0",
     "pptxgenjs": "^3.12.0",
     "typescript": "^5.7.0"
